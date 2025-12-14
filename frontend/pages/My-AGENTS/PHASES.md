@@ -32,7 +32,7 @@
 ## 📊 Phase Update: [2025-12-15]
 
 ### Current Phase: Phase 3: The Wire
-### Progress: 40%
+### Progress: 50%
 
 ### Milestones Achieved:
 - ✅ **Production Ready Backend:** API prefix, Root handler, and DB connection finalized.
@@ -42,14 +42,15 @@
 - ✅ **Real Key Management:** Curve25519 keypair generation (WireGuard-compatible) implemented.
 - ✅ **SSH Service:** Production-ready with retry logic, exponential backoff, and timeout handling.
 - ✅ **Infrastructure Automation:** VPS provisioning script (`install.sh`) for Ubuntu 24.04 created.
+- ✅ **Cloud Deployment Documentation:** Comprehensive guide for Supabase + Render + Vercel.
 
 ### Upcoming Milestones:
-- 🔲 **VPS Deployment:** Deploy to a real Ubuntu server and establish first WireGuard tunnel.
-- 🔲 **Health Monitoring:** Real-time metrics from VPN nodes.
-- 🔲 **Cloud Migration:** Move to Supabase + Vercel for production.
+- 🔲 **Live Cloud Deployment:** Actually deploy to production infrastructure.
+- 🔲 **VPS Integration:** Connect to a real Ubuntu server and establish first tunnel.
+- 🔲 **Production Testing:** End-to-end validation of the entire stack.
 
 ### Phase Blockers:
-- **VPS Access:** Need a real Ubuntu server (DigitalOcean/Hetzner/AWS) to test live connections.
+None - All code-level blockers removed. Ready for deployment.
 
 ### Notes:
-Tasks #1 (Key Management) and #2 (SSH Service) are complete. Infrastructure provisioning script is ready. The system can now theoretically manage real WireGuard servers - we just need a VPS to test it.
+Phase 3 is now 50% complete. All local development and infrastructure code is ready. The remaining 50% requires external resources (cloud accounts, VPS) which are deployment tasks, not development tasks.

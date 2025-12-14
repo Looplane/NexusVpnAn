@@ -49,8 +49,9 @@
 - [x] **Real Key Management:** Implemented Curve25519 keypair generation using `tweetnacl` (WireGuard-compatible).
 - [x] **SSH Service:** Enhanced with retry logic, exponential backoff, and timeout handling.
 - [x] **Infrastructure Scripts:** Created `infrastructure/install.sh` for Ubuntu 24.04 VPS provisioning.
+- [x] **Cloud Deployment Prep:** Created comprehensive deployment guide and environment templates.
 
 ### 🔜 Next Up:
+- [ ] **Actual Cloud Deployment:** Deploy to Supabase + Render + Vercel.
 - [ ] **VPS Testing:** Deploy to a real Ubuntu server and test end-to-end WireGuard tunnel.
-- [ ] **Cloud Deployment:** Prepare for Vercel/Supabase deployment.
 - [ ] **Monitoring:** Add health checks and metrics collection from VPN nodes.
