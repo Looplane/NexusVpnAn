@@ -59,8 +59,6 @@ import { LoginHistory } from './auth/entities/login-history.entity';
             extra: {
               // Supabase connection pooler compatibility
               application_name: 'nexusvpn-api',
-              // Force IPv4
-              family: 4,
             },
           };
         }
