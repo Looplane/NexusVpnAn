@@ -2,7 +2,16 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Campaign } from '../types'; // Mock types for now, real entity would be here
+export interface Campaign {
+  id: string;
+  name: string;
+  status: 'active' | 'paused' | 'ended';
+  clicks: number;
+  conversions: number;
+  spend: number;
+  roi: number;
+}
+
 
 @Injectable()
 export class CampaignService {
@@ -36,10 +45,10 @@ export class CampaignService {
   }
 
   private recalcRoi(campaign: Campaign) {
-      const avgValue = 10; // Avg subscription value $10
-      const revenue = campaign.conversions * avgValue;
-      if (campaign.spend > 0) {
-          campaign.roi = Math.round(((revenue - campaign.spend) / campaign.spend) * 100);
-      }
+    const avgValue = 10; // Avg subscription value $10
+    const revenue = campaign.conversions * avgValue;
+    if (campaign.spend > 0) {
+      campaign.roi = Math.round(((revenue - campaign.spend) / campaign.spend) * 100);
+    }
   }
 }

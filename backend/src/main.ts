@@ -9,13 +9,15 @@ import * as compression from 'compression';
 async function bootstrap() {
   const logger = new Logger('Bootstrap');
   const app = await NestFactory.create(AppModule);
-  
+
   // Set Global Prefix
-  app.setGlobalPrefix('api');
-  
+  app.setGlobalPrefix('api', {
+    exclude: ['/'],
+  });
+
   // Security Headers
   app.use(helmet());
-  
+
   // Compression
   app.use(compression());
 
@@ -25,7 +27,7 @@ async function bootstrap() {
     origin: (origin, callback) => {
       // Allow requests with no origin (like mobile apps or curl requests)
       if (!origin) return callback(null, true);
-      
+
       const allowedOrigins = [frontendUrl, 'http://localhost:5173', 'https://nexusvpn.vercel.app'];
       if (allowedOrigins.includes(origin) || process.env.NODE_ENV !== 'production') {
         callback(null, true);

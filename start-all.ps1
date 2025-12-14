@@ -6,7 +6,7 @@ Start-Process powershell -ArgumentList "-NoExit", "-Command", "cd backend; npm r
 
 # Start Frontend
 Write-Host "Starting Frontend..."
-Start-Process powershell -ArgumentList "-NoExit", "-Command", "npm run dev"
+Start-Process powershell -ArgumentList "-NoExit", "-Command", "cd frontend; npm run dev"
 
 # Start Mobile
 Write-Host "Starting Mobile..."

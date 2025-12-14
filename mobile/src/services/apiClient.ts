@@ -1,42 +1,48 @@
 import * as SecureStore from 'expo-secure-store';
 
 // For Android Emulator, use 10.0.2.2. For iOS/Physical, use your LAN IP.
-const API_URL = 'http://10.0.2.2:3000/api'; 
+const API_URL = 'http://10.0.2.2:3000/api';
 
 const getHeaders = async () => {
   const token = await SecureStore.getItemAsync('nexus_token');
-  return { 
-    'Content-Type': 'application/json', 
-    ...(token ? { 'Authorization': `Bearer ${token}` } : {}) 
+  return {
+    'Content-Type': 'application/json',
+    ...(token ? { 'Authorization': `Bearer ${token}` } : {})
   };
 };
 
 export const apiClient = {
   login: async (email: string, password: string) => {
     try {
-        // In a real app, fetch from API. Mocking for MVP UI dev.
-        // const res = await fetch(`${API_URL}/auth/login`, ...);
-        
-        // Mock Response
-        await new Promise(r => setTimeout(r, 1000));
-        if (email.includes('error')) throw new Error('Invalid credentials');
-        
-        const mockToken = 'mock_mobile_jwt';
-        await SecureStore.setItemAsync('nexus_token', mockToken);
-        await SecureStore.setItemAsync('nexus_user', JSON.stringify({ email, id: 'u-123', plan: 'pro' }));
+      const res = await fetch(`${API_URL}/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
+      });
+
+      if (!res.ok) throw new Error('Login failed');
+
+      const data = await res.json();
+
+      if (data.access_token) {
+        await SecureStore.setItemAsync('nexus_token', data.access_token);
+        await SecureStore.setItemAsync('nexus_user', JSON.stringify(data.user));
         return { success: true };
+      }
+      return { success: false, requires2fa: data.requires2fa };
     } catch (e) {
-        throw e;
+      console.error('Login Error:', e);
+      throw e;
     }
   },
 
   getSession: async () => {
-      const user = await SecureStore.getItemAsync('nexus_user');
-      return user ? JSON.parse(user) : null;
+    const user = await SecureStore.getItemAsync('nexus_user');
+    return user ? JSON.parse(user) : null;
   },
 
   logout: async () => {
-      await SecureStore.deleteItemAsync('nexus_token');
-      await SecureStore.deleteItemAsync('nexus_user');
+    await SecureStore.deleteItemAsync('nexus_token');
+    await SecureStore.deleteItemAsync('nexus_user');
   }
 };
