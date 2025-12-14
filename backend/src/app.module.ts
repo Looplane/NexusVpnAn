@@ -56,6 +56,12 @@ import { LoginHistory } from './auth/entities/login-history.entity';
             entities: [User, VpnConfig, Server, IpAssignment, UsageRecord, AuditLog, SystemSetting, Ticket, TicketMessage, Notification, Coupon, Session, LoginHistory],
             synchronize: true, // Note: In a real prod app, use migrations instead of sync
             ssl: isProduction ? { rejectUnauthorized: false } : false, // Required for Supabase/Neon/Render
+            extra: {
+              // Supabase connection pooler compatibility
+              application_name: 'nexusvpn-api',
+              // Force IPv4
+              family: 4,
+            },
           };
         }
 
