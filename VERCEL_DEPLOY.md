@@ -13,24 +13,48 @@ When importing `NexusVpnAn` to Vercel, use these exact settings:
 
 ### Environment Variables:
 
-Add this in Vercel → Settings → Environment Variables:
+**IMPORTANT**: Add this AFTER project is created, not during import.
 
-| Name | Value |
-|------|-------|
-| `VITE_API_URL` | `https://nexusvpn-api.onrender.com/api` |
-
-*(Update this after backend deployment)*
+1. Go to: Vercel Dashboard → Your Project → Settings → Environment Variables
+2. Click "Add New"
+3. Add:
+   - **Key**: `VITE_API_URL`
+   - **Value**: `https://nexusvpn-api.onrender.com/api`
+   - **Environment**: Production, Preview, Development (select all)
+4. Click "Save"
 
 ---
 
 ## 🚀 Deployment Steps:
 
+### Step 1: Import Project (WITHOUT Environment Variables)
+
 1. Go to: https://vercel.com/new
 2. Select `NexusVpnAn` from GitHub
-3. Configure as above
-4. Click **Deploy**
-5. Wait 2-3 minutes
-6. Your app will be live at: `https://nexusvpn-xxx.vercel.app`
+3. **Project Name**: `nexusvpn-frontend` (or any unique name)
+4. Configure build settings as above
+5. **DO NOT add environment variables yet**
+6. Click **Deploy**
+
+### Step 2: Add Environment Variable
+
+1. After deployment completes (even if it fails), go to:
+   - Vercel Dashboard → nexusvpn-frontend → Settings → Environment Variables
+2. Click "Add New Variable"
+3. Enter:
+   - Name: `VITE_API_URL`
+   - Value: `https://nexusvpn-api.onrender.com/api`
+   - Environments: Check all three (Production, Preview, Development)
+4. Click "Save"
+
+### Step 3: Redeploy
+
+1. Go to: Deployments tab
+2. Click "..." on the latest deployment
+3. Click "Redeploy"
+4. Wait 2-3 minutes
+
+Your app will be live at: `https://nexusvpn-frontend.vercel.app`
 
 ---
 
