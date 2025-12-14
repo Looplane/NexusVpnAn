@@ -1,0 +1,24 @@
+services:
+  - type: web
+    name: nexusvpn-api
+    env: node
+    plan: free
+    buildCommand: cd backend && npm install && npm run build
+    startCommand: cd backend && node dist/main
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        fromDatabase:
+          name: nexusvpn-db
+          property: connectionString
+      - key: JWT_SECRET
+        generateValue: true
+      - key: MOCK_SSH
+        value: true # Set to false if you add real SSH keys
+
+databases:
+  - name: nexusvpn-db
+    plan: free
+    databaseName: nexusvpn
+    user: nexus

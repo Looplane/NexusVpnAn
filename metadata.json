@@ -1,0 +1,5 @@
+{
+  "name": "NexusVPN",
+  "description": "A modern, secure, and lightning-fast VPN service dashboard built with WireGuard® technology.",
+  "requestFramePermissions": []
+}

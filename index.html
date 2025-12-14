@@ -1,0 +1,150 @@
+
+<!DOCTYPE html>
+<html lang="en" class="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="https://lucide.dev/favicon.ico" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>NexusVPN - Secure Your Digital Life</title>
+    
+    <!-- PWA / Mobile Capable -->
+    <meta name="theme-color" content="#0f172a" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <link rel="manifest" href="/manifest.json" />
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/lipis/flag-icons@6.6.6/css/flag-icons.min.css" />
+    <script>
+      tailwind.config = {
+        darkMode: 'class',
+        theme: {
+          extend: {
+            fontFamily: {
+              sans: ['Inter', 'sans-serif'],
+            },
+            colors: {
+              brand: {
+                50: '#f0f9ff',
+                100: '#e0f2fe',
+                200: '#bae6fd',
+                300: '#7dd3fc',
+                400: '#38bdf8',
+                500: '#0ea5e9',
+                600: '#0284c7',
+                700: '#0369a1',
+                800: '#075985',
+                900: '#0c4a6e',
+                950: '#082f49',
+              }
+            }
+          }
+        }
+      }
+    </script>
+    <style>
+      :root {
+        color-scheme: light dark;
+      }
+      /* Default Light Mode */
+      body {
+        background-color: #f8fafc; /* Slate 50 */
+        color: #0f172a; /* Slate 900 */
+        transition: background-color 0.3s ease, color 0.3s ease;
+      }
+      
+      /* Dark Mode Override */
+      html.dark body {
+        background-color: #020617; /* Slate 950 */
+        color: #e2e8f0; /* Slate 200 */
+      }
+
+      /* Custom Scrollbar */
+      ::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+      }
+      ::-webkit-scrollbar-track {
+        background: #f1f5f9; 
+      }
+      html.dark ::-webkit-scrollbar-track {
+        background: #0f172a; 
+      }
+      
+      ::-webkit-scrollbar-thumb {
+        background: #cbd5e1; 
+        border-radius: 4px;
+      }
+      html.dark ::-webkit-scrollbar-thumb {
+        background: #334155; 
+      }
+      
+      ::-webkit-scrollbar-thumb:hover {
+        background: #94a3b8; 
+      }
+      html.dark ::-webkit-scrollbar-thumb:hover {
+        background: #475569; 
+      }
+
+      .scrollbar-hide::-webkit-scrollbar {
+          display: none;
+      }
+      .scrollbar-hide {
+          -ms-overflow-style: none;
+          scrollbar-width: none;
+      }
+    </style>
+  <script type="importmap">
+{
+  "imports": {
+    "react/": "https://esm.sh/react@^19.2.3/",
+    "react": "https://esm.sh/react@^19.2.3",
+    "react-router-dom": "https://esm.sh/react-router-dom@^7.10.1",
+    "lucide-react": "https://esm.sh/lucide-react@^0.561.0",
+    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
+    "react-qr-code": "https://esm.sh/react-qr-code@2.0.15",
+    "@nestjs/core": "https://esm.sh/@nestjs/core@^11.1.9",
+    "typeorm": "https://esm.sh/typeorm@^0.3.28",
+    "@nestjs/common": "https://esm.sh/@nestjs/common@^11.1.9",
+    "@nestjs/typeorm": "https://esm.sh/@nestjs/typeorm@^11.0.0",
+    "bcrypt": "https://esm.sh/bcrypt@^6.0.0",
+    "class-validator": "https://esm.sh/class-validator@^0.14.3",
+    "@nestjs/jwt": "https://esm.sh/@nestjs/jwt@^11.0.2",
+    "passport-local": "https://esm.sh/passport-local@^1.0.0",
+    "passport-jwt": "https://esm.sh/passport-jwt@^4.0.1",
+    "@nestjs/passport": "https://esm.sh/@nestjs/passport@^11.0.5",
+    "crypto": "https://esm.sh/crypto@^1.0.1",
+    "ssh2": "https://esm.sh/ssh2@^1.17.0",
+    "stripe": "https://esm.sh/stripe@^20.0.0",
+    "@nestjs/schedule": "https://esm.sh/@nestjs/schedule@^6.1.0",
+    "express": "https://esm.sh/express@^5.2.1",
+    "recharts": "https://esm.sh/recharts@^3.5.1",
+    "qrcode": "https://esm.sh/qrcode@^1.5.4",
+    "otplib": "https://esm.sh/otplib@^12.0.1",
+    "helmet": "https://esm.sh/helmet@^8.1.0",
+    "compression": "https://esm.sh/compression@^1.8.1",
+    "@nestjs/terminus": "https://esm.sh/@nestjs/terminus@^11.0.0",
+    "@nestjs/axios": "https://esm.sh/@nestjs/axios@^4.0.1",
+    "@nestjs/swagger": "https://esm.sh/@nestjs/swagger@^11.2.3",
+    "@nestjs/throttler": "https://esm.sh/@nestjs/throttler@^6.5.0",
+    "fs": "https://esm.sh/fs@^0.0.1-security",
+    "expo-status-bar": "https://esm.sh/expo-status-bar@^3.0.9",
+    "react-native-safe-area-context": "https://esm.sh/react-native-safe-area-context@^5.6.2",
+    "@react-navigation/native": "https://esm.sh/@react-navigation/native@^7.1.25",
+    "@react-navigation/native-stack": "https://esm.sh/@react-navigation/native-stack@^7.8.6",
+    "react-native": "https://esm.sh/react-native@^0.83.0",
+    "lucide-react-native": "https://esm.sh/lucide-react-native@^0.561.0",
+    "expo-secure-store": "https://esm.sh/expo-secure-store@^15.0.8"
+  }
+}
+</script>
+<link rel="stylesheet" href="/index.css">
+</head>
+  <body>
+    <div id="root"></div>
+  <script type="module" src="/index.tsx"></script>
+</body>
+</html>
