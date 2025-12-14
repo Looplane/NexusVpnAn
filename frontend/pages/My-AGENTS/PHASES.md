@@ -32,20 +32,22 @@
 ## 📊 Phase Update: [2025-12-15]
 
 ### Current Phase: Phase 3: The Wire
-### Progress: 15%
+### Progress: 25%
 
 ### Milestones Achieved:
 - ✅ **Production Ready Backend:** API prefix, Root handler, and DB connection finalized.
 - ✅ **End-to-End Auth:** Login/Register flows verified on Web and Mobile.
 - ✅ **Admin Enhancements:** Demo credentials toggle and dashboard polish.
 - ✅ **Mobile Integration:** Mobile app connected to local backend API.
+- ✅ **Real Key Management:** Curve25519 keypair generation (WireGuard-compatible) implemented.
 
 ### Upcoming Milestones:
-- 🔲 **Real WireGuard Connection:** The `SshService` needs to connect to a real Ubuntu VPS.
-- 🔲 **Key Management:** Move key generation from `mockService` to `VpnService` (Node.js crypto).
+- 🔲 **SSH Service Implementation:** Real SSH connections to VPN nodes.
+- 🔲 **Infrastructure Automation:** VPS provisioning scripts for Ubuntu 24.04.
+- 🔲 **Real WireGuard Connection:** End-to-end tunnel establishment.
 
 ### Phase Blockers:
-- **SSH Access:** Real server metrics require Phase 3 (WireGuard Integration) to begin.
+- **VPS Access:** Need a real Ubuntu server to test SSH and WireGuard provisioning.
 
 ### Notes:
-The application is now "Production Ready" in terms of structure and core logic. The focus now shifts entirely to the "Wire" phase - making the VPN actually connect.
+Task #1 (Key Management) is complete. The backend now generates cryptographically valid WireGuard keys. Next: SSH automation and infrastructure scripts.

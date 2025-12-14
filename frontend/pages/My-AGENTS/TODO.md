@@ -41,13 +41,14 @@
 - **Project Structure:** Reorganized into `frontend/`, `backend/`, `mobile/` monorepo.
 - **Local Dev:** Prioritized local PostgreSQL setup over Cloud for immediate dev.
 
-### ✅ Completed:
+### ✅ Completed (2025-12-15):
 - [x] **Project Initialization:** Full stack (FE/BE/Mobile) runnable via `start-all.ps1`.
 - [x] **Backend Fixes:** Dependency resolution, Root route handler, CORS setup.
 - [x] **Frontend Fixes:** Port conflict resolution (5173), `tsconfig` fixes.
 - [x] **Database:** Local PostgreSQL connection established.
+- [x] **Real Key Management:** Implemented Curve25519 keypair generation using `tweetnacl` (WireGuard-compatible).
 
 ### 🔜 Next Up:
-- [ ] **Phase 3 Kickoff:** Begin planning WireGuard integration.
+- [ ] **SSH Service:** Implement real SSH connection to VPN nodes using `ssh2` library.
+- [ ] **Infrastructure Scripts:** Create `infrastructure/install.sh` for Ubuntu 24.04 VPS setup.
 - [ ] **Cloud Deployment:** Prepare for Vercel/Supabase deployment.
-- [ ] **Mobile Native:** Investigate WireGuard bindings for React Native.

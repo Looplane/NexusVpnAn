@@ -9,7 +9,8 @@ import { AuditService } from '../audit/audit.service';
 import { UsersService } from '../users/users.service';
 import { UserPlan } from '../users/entities/user.entity';
 import { GenerateConfigDto } from './dto/generate-config.dto';
-import * as crypto from 'crypto';
+import * as nacl from 'tweetnacl';
+import * as naclUtil from 'tweetnacl-util';
 
 @Injectable()
 export class VpnService {
@@ -23,7 +24,7 @@ export class VpnService {
     private ipamService: IpamService,
     private auditService: AuditService,
     private usersService: UsersService,
-  ) {}
+  ) { }
 
   async getUserConfigs(userId: string) {
     return this.vpnConfigRepository.find({
@@ -38,19 +39,19 @@ export class VpnService {
     // 1. Check Maintenance Mode
     const maintenance = await this.auditService.getSettingValue('maintenance_mode');
     if (maintenance === 'true') {
-        throw new ForbiddenException('System is in maintenance mode. Cannot generate new keys.');
+      throw new ForbiddenException('System is in maintenance mode. Cannot generate new keys.');
     }
 
     // 2. Check Device Limits
     const user = await this.usersService.findOneById(userId);
     const existingConfigs = await this.vpnConfigRepository.count({ where: { userId } });
-    
+
     let limit = 1; // Default Free
     if (user.plan === UserPlan.BASIC) limit = 5;
     if (user.plan === UserPlan.PRO) limit = 10;
 
     if (existingConfigs >= limit) {
-        throw new BadRequestException(`Device limit reached for ${user.plan} plan (${limit} devices). Please upgrade.`);
+      throw new BadRequestException(`Device limit reached for ${user.plan} plan (${limit} devices). Please upgrade.`);
     }
 
     // 3. Get Server
@@ -66,8 +67,8 @@ export class VpnService {
     } catch (error) {
       this.logger.error(`Failed to provision peer on ${server.ipv4}: ${error.message}`);
       if (process.env.NODE_ENV === 'production') {
-          // In prod, if provisioning fails, we shouldn't return a config that won't work
-          throw new InternalServerErrorException('Failed to provision VPN tunnel on remote node');
+        // In prod, if provisioning fails, we shouldn't return a config that won't work
+        throw new InternalServerErrorException('Failed to provision VPN tunnel on remote node');
       }
     }
 
@@ -90,7 +91,7 @@ export class VpnService {
   async revokeConfig(userId: string, configId: string) {
     const config = await this.vpnConfigRepository.findOne({ where: { id: configId }, relations: ['server'] }); // IMPORTANT: Join server to get IP
     if (!config) throw new NotFoundException('Configuration not found');
-    
+
     if (config.userId !== userId) {
       throw new ForbiddenException('You do not own this device');
     }
@@ -100,12 +101,12 @@ export class VpnService {
     const server = await this.locationsService.findOne(config.locationId);
 
     if (server) {
-        try {
-          const command = `sudo wg set wg0 peer ${config.publicKey} remove`;
-          await this.sshService.executeCommand(command, server.ipv4, server.sshUser);
-        } catch (e) {
-          this.logger.warn(`Failed to remove peer from WG server ${server.ipv4}: ${e.message}`);
-        }
+      try {
+        const command = `sudo wg set wg0 peer ${config.publicKey} remove`;
+        await this.sshService.executeCommand(command, server.ipv4, server.sshUser);
+      } catch (e) {
+        this.logger.warn(`Failed to remove peer from WG server ${server.ipv4}: ${e.message}`);
+      }
     }
 
     await this.vpnConfigRepository.remove(config);
@@ -117,13 +118,13 @@ export class VpnService {
   private async provisionPeerOnServer(publicKey: string, allowedIp: string, host: string, user: string) {
     const interfaceName = 'wg0';
     const command = `sudo wg set ${interfaceName} peer ${publicKey} allowed-ips ${allowedIp}`;
-    const output = await this.sshService.executeCommand(command, host, user); 
+    const output = await this.sshService.executeCommand(command, host, user);
     return output;
   }
 
   private formatConfigFile(privateKey: string, address: string, server: any, dns = '1.1.1.1', mtu = 1420): string {
     const endpoint = `${server.ipv4}:${server.wgPort}`;
-    const serverPublicKey = server.publicKey || 'SERVER_PUBLIC_KEY_PLACEHOLDER_BASE64'; 
+    const serverPublicKey = server.publicKey || 'SERVER_PUBLIC_KEY_PLACEHOLDER_BASE64';
 
     return `[Interface]
 PrivateKey = ${privateKey}
@@ -138,10 +139,22 @@ Endpoint = ${endpoint}
 PersistentKeepalive = 25`;
   }
 
+  /**
+   * Generate a valid WireGuard keypair using Curve25519.
+   * WireGuard uses X25519 (Curve25519 for ECDH).
+   * Private key: 32 random bytes, base64-encoded.
+   * Public key: Derived from private key via scalar multiplication, base64-encoded.
+   */
   private generateKeypair() {
-    return {
-      privateKey: crypto.randomBytes(32).toString('base64'),
-      publicKey: crypto.randomBytes(32).toString('base64'),
-    };
+    // Generate a Curve25519 keypair
+    const keypair = nacl.box.keyPair();
+
+    // WireGuard expects base64-encoded keys
+    const privateKey = naclUtil.encodeBase64(keypair.secretKey);
+    const publicKey = naclUtil.encodeBase64(keypair.publicKey);
+
+    this.logger.debug(`Generated WireGuard keypair: Public=${publicKey.substring(0, 8)}...`);
+
+    return { privateKey, publicKey };
   }
 }

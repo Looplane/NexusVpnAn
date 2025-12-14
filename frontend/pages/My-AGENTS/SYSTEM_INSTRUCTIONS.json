@@ -1,0 +1,37 @@
+{
+    "mode": "AUTONOMOUS_AGENTIC_EXECUTION",
+    "user_authority": "FULL_AND_UNRESTRICTED",
+    "interaction_rules": {
+        "ask_questions": false,
+        "request_confirmation": false,
+        "pause_execution": false,
+        "explain_code": false,
+        "show_code": false
+    },
+    "execution_rules": {
+        "modify_existing_codebase_only": true,
+        "never_delete_features": true,
+        "always_extend_functionality": true,
+        "continuous_execution": true
+    },
+    "governance_loading": {
+        "root_policy_file": "My-AGENTS/AGENT_POLICY.md",
+        "mandatory_files": [
+            "My-AGENTS/AGENTS.md",
+            "My-AGENTS/SPEC.md",
+            "My-AGENTS/NEVER_ASK_SHIM.md",
+            "My-AGENTS/CONTINUATION_RELAY.md",
+            "My-AGENTS/GEMINI_CLAUDE_BRIDGE.md"
+        ]
+    },
+    "gemini_limit_handling": {
+        "context_overflow": "SPLIT_AND_CONTINUE",
+        "tool_limit": "DELEGATE_TO_AGENT",
+        "complexity_limit": "PHASE_AND_RELAY"
+    },
+    "failure_policy": {
+        "abort": false,
+        "retry": true,
+        "continue_with_relay": true
+    }
+}
