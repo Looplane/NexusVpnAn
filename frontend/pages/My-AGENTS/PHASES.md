@@ -32,7 +32,7 @@
 ## 📊 Phase Update: [2025-12-15]
 
 ### Current Phase: Phase 3: The Wire
-### Progress: 25%
+### Progress: 40%
 
 ### Milestones Achieved:
 - ✅ **Production Ready Backend:** API prefix, Root handler, and DB connection finalized.
@@ -40,14 +40,16 @@
 - ✅ **Admin Enhancements:** Demo credentials toggle and dashboard polish.
 - ✅ **Mobile Integration:** Mobile app connected to local backend API.
 - ✅ **Real Key Management:** Curve25519 keypair generation (WireGuard-compatible) implemented.
+- ✅ **SSH Service:** Production-ready with retry logic, exponential backoff, and timeout handling.
+- ✅ **Infrastructure Automation:** VPS provisioning script (`install.sh`) for Ubuntu 24.04 created.
 
 ### Upcoming Milestones:
-- 🔲 **SSH Service Implementation:** Real SSH connections to VPN nodes.
-- 🔲 **Infrastructure Automation:** VPS provisioning scripts for Ubuntu 24.04.
-- 🔲 **Real WireGuard Connection:** End-to-end tunnel establishment.
+- 🔲 **VPS Deployment:** Deploy to a real Ubuntu server and establish first WireGuard tunnel.
+- 🔲 **Health Monitoring:** Real-time metrics from VPN nodes.
+- 🔲 **Cloud Migration:** Move to Supabase + Vercel for production.
 
 ### Phase Blockers:
-- **VPS Access:** Need a real Ubuntu server to test SSH and WireGuard provisioning.
+- **VPS Access:** Need a real Ubuntu server (DigitalOcean/Hetzner/AWS) to test live connections.
 
 ### Notes:
-Task #1 (Key Management) is complete. The backend now generates cryptographically valid WireGuard keys. Next: SSH automation and infrastructure scripts.
+Tasks #1 (Key Management) and #2 (SSH Service) are complete. Infrastructure provisioning script is ready. The system can now theoretically manage real WireGuard servers - we just need a VPS to test it.

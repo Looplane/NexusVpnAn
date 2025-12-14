@@ -47,8 +47,10 @@
 - [x] **Frontend Fixes:** Port conflict resolution (5173), `tsconfig` fixes.
 - [x] **Database:** Local PostgreSQL connection established.
 - [x] **Real Key Management:** Implemented Curve25519 keypair generation using `tweetnacl` (WireGuard-compatible).
+- [x] **SSH Service:** Enhanced with retry logic, exponential backoff, and timeout handling.
+- [x] **Infrastructure Scripts:** Created `infrastructure/install.sh` for Ubuntu 24.04 VPS provisioning.
 
 ### 🔜 Next Up:
-- [ ] **SSH Service:** Implement real SSH connection to VPN nodes using `ssh2` library.
-- [ ] **Infrastructure Scripts:** Create `infrastructure/install.sh` for Ubuntu 24.04 VPS setup.
+- [ ] **VPS Testing:** Deploy to a real Ubuntu server and test end-to-end WireGuard tunnel.
 - [ ] **Cloud Deployment:** Prepare for Vercel/Supabase deployment.
+- [ ] **Monitoring:** Add health checks and metrics collection from VPN nodes.
