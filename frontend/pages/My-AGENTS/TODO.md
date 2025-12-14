@@ -50,8 +50,12 @@
 - [x] **SSH Service:** Enhanced with retry logic, exponential backoff, and timeout handling.
 - [x] **Infrastructure Scripts:** Created `infrastructure/install.sh` for Ubuntu 24.04 VPS provisioning.
 - [x] **Cloud Deployment Prep:** Created comprehensive deployment guide and environment templates.
+- [x] **Supabase Configuration:** Connection string obtained, migration SQL prepared.
+- [x] **Vercel Configuration:** Config files created, deployment guide ready.
+- [x] **Render Configuration:** Environment variables generated, deployment guide ready.
 
-### 🔜 Next Up:
-- [ ] **Actual Cloud Deployment:** Deploy to Supabase + Render + Vercel.
-- [ ] **VPS Testing:** Deploy to a real Ubuntu server and test end-to-end WireGuard tunnel.
-- [ ] **Monitoring:** Add health checks and metrics collection from VPN nodes.
+### 🔜 Next Up (Manual Steps Required):
+- [ ] **Supabase Migration:** Run `supabase_migration.sql` in Supabase SQL Editor.
+- [ ] **Vercel Deployment:** Import project and deploy frontend.
+- [ ] **Render Deployment:** Create web service and deploy backend.
+- [ ] **End-to-End Testing:** Verify full stack works in production.
