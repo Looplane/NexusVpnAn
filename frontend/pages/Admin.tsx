@@ -526,9 +526,17 @@ export const AdminDashboard: React.FC = () => {
                 <Modal isOpen={showServerModal} onClose={() => setShowServerModal(false)} title="Add VPN Node">
                     <form onSubmit={handleAddServer} className="space-y-4">
                         <Input label="Server Name" value={newServer.name} onChange={e => setNewServer({ ...newServer, name: e.target.value })} required placeholder="e.g. Frankfurt Node 1" />
-                        <div className="grid grid-cols-2 gap-4"><Input label="City" value={newServer.city} onChange={e => setNewServer({ ...newServer, city: e.target.value })} required /><Input label="Country Code" value={newServer.countryCode} onChange={e => setNewServer({ ...newServer, countryCode: e.target.value })} required maxLength={2} /></div>
-                        <Input label="IPv4" value={newServer.ipv4} onChange={e => setNewServer({ ...newServer, ipv4: e.target.value })} required />
-                        <Button type="submit" isLoading={isAddingServer} className="w-full">Deploy</Button>
+                        <Input label="City" value={newServer.city} onChange={e => setNewServer({ ...newServer, city: e.target.value })} required placeholder="e.g. Frankfurt" />
+                        <div className="grid grid-cols-2 gap-4">
+                            <Input label="Country" value={newServer.country} onChange={e => setNewServer({ ...newServer, country: e.target.value })} required placeholder="e.g. Germany" />
+                            <Input label="Country Code" value={newServer.countryCode} onChange={e => setNewServer({ ...newServer, countryCode: e.target.value.toUpperCase() })} required maxLength={2} placeholder="e.g. DE" />
+                        </div>
+                        <Input label="IPv4 Address" value={newServer.ipv4} onChange={e => setNewServer({ ...newServer, ipv4: e.target.value })} required placeholder="e.g. 46.62.201.216" />
+                        <div className="text-xs text-slate-500 dark:text-slate-400">
+                            <p>💡 The system will automatically fetch the WireGuard public key via SSH.</p>
+                            <p>💡 Make sure SSH access is configured before adding the server.</p>
+                        </div>
+                        <Button type="submit" isLoading={isAddingServer} className="w-full">Add Server</Button>
                     </form>
                 </Modal>
 
