@@ -18,6 +18,21 @@
       "env": {
         "RENDER_API_KEY": "your-render-api-key-here"
       }
+    },
+    "firecrawl": {
+      "name": "Firecrawl MCP Server",
+      "description": "MCP server for web scraping and data extraction using Firecrawl",
+      "command": "npx",
+      "args": ["-y", "firecrawl-mcp"],
+      "env": {
+        "FIRECRAWL_API_KEY": "fc-d7b41c4f1c7a49eca63ea166bed5e181",
+        "FIRECRAWL_RETRY_MAX_ATTEMPTS": "3",
+        "FIRECRAWL_RETRY_INITIAL_DELAY": "1000",
+        "FIRECRAWL_RETRY_MAX_DELAY": "10000",
+        "FIRECRAWL_RETRY_BACKOFF_FACTOR": "2",
+        "FIRECRAWL_CREDIT_WARNING_THRESHOLD": "1000",
+        "FIRECRAWL_CREDIT_CRITICAL_THRESHOLD": "100"
+      }
     }
   }
 }

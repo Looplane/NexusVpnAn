@@ -21,6 +21,7 @@ This file contains the agent configuration for managing MCP servers and API key 
 ### ✅ Completed Tasks
 - [x] Supabase MCP server built and tested
 - [x] Render MCP server built and tested  
+- [x] Firecrawl MCP server configured and integrated
 - [x] API keys configured in .env.mcp
 - [x] Documentation moved to --DOCUMENTATIONS--/05-MCP/
 - [x] Windows test scripts created
@@ -41,6 +42,14 @@ This file contains the agent configuration for managing MCP servers and API key 
 - `trigger_deploy` - Trigger deployments
 - `update_env_vars` - Update environment variables
 
+**Firecrawl MCP Server**:
+- `scrape_url` - Scrape web pages and extract structured data
+- `crawl_site` - Crawl entire websites with intelligent link following
+- `extract_content` - Extract specific content types (text, images, links)
+- `search_and_scrape` - Search for content and scrape results
+- `analyze_page` - Analyze page structure and metadata
+- `monitor_credits` - Monitor Firecrawl API usage and credits
+
 ## 📁 File Structure
 
 ```
@@ -51,11 +60,13 @@ This file contains the agent configuration for managing MCP servers and API key 
     ├── MCP_QUICK_SETUP.md
     ├── MCP_INTEGRATION_GUIDE.md
     ├── MCP_KEYS_ACTION_PLAN.md
-    └── MCP_SETUP_COMPLETE.md
+    ├── MCP_SETUP_COMPLETE.md
+    └── FIRECRAWL_INTEGRATION.md
 
 mcp-servers/
 ├── supabase-mcp/
 ├── render-mcp/
+├── firecrawl-mcp/
 └── README.md
 
 mcp-scripts/
@@ -64,7 +75,8 @@ mcp-scripts/
 ├── stop-dev.sh
 ├── test-mcp.sh
 ├── setup-helper.bat
-└── setup-simple.ps1
+├── setup-simple.ps1
+└── test-firecrawl.sh
 ```
 
 ## 🎯 Next Actions
@@ -73,6 +85,7 @@ mcp-scripts/
 - [ ] Update main project README with MCP integration info
 - [ ] Add MCP commands to package.json scripts
 - [ ] Test full integration with existing deployment workflow
+- [ ] Test Firecrawl MCP server functionality
 
 ### Future Enhancements (Medium Priority)
 - [ ] Create MCP server for Vercel management
