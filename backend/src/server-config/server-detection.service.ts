@@ -30,14 +30,16 @@ export class ServerDetectionService {
   /**
    * Detect operating system on remote server
    */
-  async detectOS(ipv4: string, sshUser: string = 'root'): Promise<OSInfo> {
+  async detectOS(ipv4: string, sshUser: string = 'root', password?: string): Promise<OSInfo> {
     try {
       // Try Windows detection first (PowerShell)
       try {
         const psVersion = await this.sshService.executeCommand(
           'powershell -Command "$PSVersionTable.PSVersion.Major"',
           ipv4,
-          sshUser
+          sshUser,
+          3,
+          password
         );
         if (psVersion && !psVersion.includes('SIMULATION') && !psVersion.includes('mock')) {
           const majorVersion = parseInt(psVersion.trim(), 10);
@@ -71,7 +73,7 @@ export class ServerDetectionService {
 
       // Try Linux detection (uname)
       try {
-        const uname = await this.sshService.executeCommand('uname -s', ipv4, sshUser);
+        const uname = await this.sshService.executeCommand('uname -s', ipv4, sshUser, 3, password);
         if (uname && uname.toLowerCase().includes('linux')) {
           // Get distribution
           let distribution = 'linux';
@@ -79,8 +81,8 @@ export class ServerDetectionService {
 
           // Try to detect specific distribution
           try {
-            if (await this.sshService.executeCommand('test -f /etc/os-release && echo "yes"', ipv4, sshUser).then(r => r.includes('yes'))) {
-              const osRelease = await this.sshService.executeCommand('cat /etc/os-release', ipv4, sshUser);
+            if (await this.sshService.executeCommand('test -f /etc/os-release && echo "yes"', ipv4, sshUser, 3, password).then(r => r.includes('yes'))) {
+              const osRelease = await this.sshService.executeCommand('cat /etc/os-release', ipv4, sshUser, 3, password);
               const idMatch = osRelease.match(/^ID=(.+)$/m);
               const versionMatch = osRelease.match(/^VERSION_ID="?([^"]+)"?/m);
               
@@ -94,7 +96,7 @@ export class ServerDetectionService {
           } catch (e) {
             // Fallback to lsb_release or other methods
             try {
-              const lsb = await this.sshService.executeCommand('lsb_release -is 2>/dev/null || echo "unknown"', ipv4, sshUser);
+              const lsb = await this.sshService.executeCommand('lsb_release -is 2>/dev/null || echo "unknown"', ipv4, sshUser, 3, password);
               if (lsb && !lsb.includes('unknown')) {
                 distribution = lsb.toLowerCase().trim();
               }
@@ -103,7 +105,7 @@ export class ServerDetectionService {
             }
           }
 
-          const arch = await this.sshService.executeCommand('uname -m', ipv4, sshUser).catch(() => 'x64');
+          const arch = await this.sshService.executeCommand('uname -m', ipv4, sshUser, 3, password).catch(() => 'x64');
 
           return {
             type: 'linux',
@@ -115,12 +117,12 @@ export class ServerDetectionService {
 
         // Check for macOS
         if (uname && uname.toLowerCase().includes('darwin')) {
-          const version = await this.sshService.executeCommand('sw_vers -productVersion', ipv4, sshUser).catch(() => 'unknown');
+          const version = await this.sshService.executeCommand('sw_vers -productVersion', ipv4, sshUser, 3, password).catch(() => 'unknown');
           return {
             type: 'macos',
             distribution: 'macos',
             version,
-            architecture: await this.sshService.executeCommand('uname -m', ipv4, sshUser).catch(() => 'x64')
+            architecture: await this.sshService.executeCommand('uname -m', ipv4, sshUser, 3, password).catch(() => 'x64')
           };
         }
       } catch (e) {
@@ -137,9 +139,9 @@ export class ServerDetectionService {
   /**
    * Check server requirements for NexusVPN
    */
-  async checkRequirements(ipv4: string, sshUser: string = 'root', osInfo?: OSInfo): Promise<ServerRequirements> {
+  async checkRequirements(ipv4: string, sshUser: string = 'root', osInfo?: OSInfo, password?: string): Promise<ServerRequirements> {
     if (!osInfo) {
-      osInfo = await this.detectOS(ipv4, sshUser);
+      osInfo = await this.detectOS(ipv4, sshUser, password);
     }
 
     const requirements: ServerRequirements = {
@@ -163,7 +165,9 @@ export class ServerDetectionService {
           const sshStatus = await this.sshService.executeCommand(
             'powershell -Command "Get-Service sshd -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Status"',
             ipv4,
-            sshUser
+            sshUser,
+            3,
+            password
           );
           requirements.ssh = sshStatus && sshStatus.toLowerCase().includes('running');
           requirements.services.ssh = requirements.ssh ? 'running' : 'stopped';
@@ -176,13 +180,17 @@ export class ServerDetectionService {
           const wgCheck = await this.sshService.executeCommand(
             'powershell -Command "Get-Service -Name "WireGuardTunnel*" -ErrorAction SilentlyContinue | Select-Object -First 1"',
             ipv4,
-            sshUser
+            sshUser,
+            3,
+            password
           );
           if (wgCheck && wgCheck.trim().length > 0) {
             const wgStatus = await this.sshService.executeCommand(
               'powershell -Command "Get-Service -Name "WireGuardTunnel*" -ErrorAction SilentlyContinue | Select-Object -First 1 -ExpandProperty Status"',
               ipv4,
-              sshUser
+              sshUser,
+              3,
+              password
             );
             requirements.wireguard = wgStatus && wgStatus.toLowerCase().includes('running');
             requirements.services.wireguard = requirements.wireguard ? 'running' : 'stopped';
@@ -191,7 +199,9 @@ export class ServerDetectionService {
             const wgExe = await this.sshService.executeCommand(
               'powershell -Command "Test-Path \"C:\\Program Files\\WireGuard\\wg.exe\""',
               ipv4,
-              sshUser
+              sshUser,
+              3,
+              password
             );
             if (wgExe && wgExe.trim().toLowerCase() === 'true') {
               requirements.services.wireguard = 'stopped';
@@ -206,7 +216,9 @@ export class ServerDetectionService {
           const fwStatus = await this.sshService.executeCommand(
             'powershell -Command "(Get-NetFirewallProfile -Profile Domain,Public,Private).Enabled"',
             ipv4,
-            sshUser
+            sshUser,
+            3,
+            password
           );
           requirements.firewall = fwStatus && fwStatus.includes('True');
         } catch (e) {
@@ -220,7 +232,9 @@ export class ServerDetectionService {
           const sshStatus = await this.sshService.executeCommand(
             'systemctl is-active sshd 2>/dev/null || systemctl is-active ssh 2>/dev/null || echo "inactive"',
             ipv4,
-            sshUser
+            sshUser,
+            3,
+            password
           );
           requirements.ssh = sshStatus && sshStatus.trim() === 'active';
           requirements.services.ssh = requirements.ssh ? 'running' : (sshStatus.includes('inactive') ? 'stopped' : 'not-installed');
@@ -239,7 +253,9 @@ export class ServerDetectionService {
             const wgStatus = await this.sshService.executeCommand(
               'systemctl is-active wg-quick@wg0 2>/dev/null || echo "inactive"',
               ipv4,
-              sshUser
+              sshUser,
+              3,
+              password
             );
             requirements.wireguard = wgStatus && wgStatus.trim() === 'active';
             requirements.services.wireguard = requirements.wireguard ? 'running' : 'stopped';
@@ -255,7 +271,9 @@ export class ServerDetectionService {
           const ufwCheck = await this.sshService.executeCommand(
             'which ufw 2>/dev/null && ufw status | head -1 || echo "not-installed"',
             ipv4,
-            sshUser
+            sshUser,
+            3,
+            password
           );
           requirements.firewall = ufwCheck && (ufwCheck.includes('active') || ufwCheck.includes('Status: active'));
         } catch (e) {
@@ -264,7 +282,9 @@ export class ServerDetectionService {
             const iptablesCheck = await this.sshService.executeCommand(
               'iptables -L -n 2>/dev/null | head -5 | wc -l',
               ipv4,
-              sshUser
+              sshUser,
+              3,
+              password
             );
             requirements.firewall = parseInt(iptablesCheck.trim(), 10) > 0;
           } catch (e2) {
@@ -277,7 +297,9 @@ export class ServerDetectionService {
           const ipForward = await this.sshService.executeCommand(
             'sysctl net.ipv4.ip_forward | awk \'{print $3}\'',
             ipv4,
-            sshUser
+            sshUser,
+            3,
+            password
           );
           requirements.ipForwarding = ipForward && ipForward.trim() === '1';
         } catch (e) {
@@ -292,7 +314,9 @@ export class ServerDetectionService {
               const check = await this.sshService.executeCommand(
                 `dpkg -l | grep -q "^ii.*${pkg}" && echo "installed" || echo "missing"`,
                 ipv4,
-                sshUser
+                sshUser,
+                3,
+                password
               );
               if (check && check.includes('missing')) {
                 requirements.missingPackages.push(pkg);
@@ -308,7 +332,9 @@ export class ServerDetectionService {
               const check = await this.sshService.executeCommand(
                 `rpm -q ${pkg} 2>/dev/null && echo "installed" || echo "missing"`,
                 ipv4,
-                sshUser
+                sshUser,
+                3,
+                password
               );
               if (check && check.includes('missing')) {
                 requirements.missingPackages.push(pkg);
@@ -324,7 +350,9 @@ export class ServerDetectionService {
           const sshStatus = await this.sshService.executeCommand(
             'sudo launchctl list | grep sshd || echo "not-running"',
             ipv4,
-            sshUser
+            sshUser,
+            3,
+            password
           );
           requirements.ssh = !sshStatus.includes('not-running');
           requirements.services.ssh = requirements.ssh ? 'running' : 'stopped';

@@ -26,6 +26,12 @@ Historical records of actions, sessions, and decisions.
 Comprehensive deployment and setup guides.
 *   `THE_ULTIMATE_DEPLOYMENT_GUIDE.md`: Complete deployment walkthrough.
 
+### Core Features Documentation
+*   `PASSWORD_AUTHENTICATION_IMPLEMENTATION.md`: 🔐 Password authentication for SSH connections (Windows Server support)
+*   `AUTO_CONFIG_IMPLEMENTATION_SUMMARY.md`: 🤖 Auto-configuration system overview
+*   `NODE_INSPECTOR_COMPLETE.md`: 🔍 Node Inspector modal functionality
+*   `WINDOWS_SERVER_2019_SSH_SETUP.md`: 🪟 Windows Server SSH configuration guide
+
 ### [05-MCP](./05-MCP)
 Model Context Protocol (MCP) server documentation and guides.
 *   `README.md`: Overview of MCP integration.

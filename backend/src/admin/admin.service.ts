@@ -48,10 +48,9 @@ export class AdminService {
   private async isWindowsServer(server: Server): Promise<boolean> {
       try {
           // Try PowerShell command first (Windows)
-          const psOutput = await this.sshService.executeCommand(
+          const psOutput = await this.sshService.executeCommandOnServer(
               'powershell -Command "$PSVersionTable.PSVersion.Major"', 
-              server.ipv4, 
-              server.sshUser
+              server
           );
           if (psOutput && !psOutput.includes('SIMULATION') && !psOutput.includes('mock')) {
               const majorVersion = parseInt(psOutput.trim(), 10);
@@ -62,7 +61,7 @@ export class AdminService {
       } catch (e) {
           // PowerShell not available, try uname (Linux)
           try {
-              const unameOutput = await this.sshService.executeCommand('uname', server.ipv4, server.sshUser);
+              const unameOutput = await this.sshService.executeCommandOnServer('uname', server);
               if (unameOutput && unameOutput.includes('Linux')) {
                   return false;
               }
@@ -250,7 +249,7 @@ echo "---------------------------------------------------"
               throw new BadRequestException('Command not allowed for security reasons.');
           }
 
-          const output = await this.sshService.executeCommand(command, server.ipv4, server.sshUser);
+          const output = await this.sshService.executeCommandOnServer(command, server);
           return output;
       } catch (e) {
           if (e instanceof BadRequestException) {
@@ -282,7 +281,7 @@ echo "---------------------------------------------------"
           if (isWindows) {
               // Windows Server metrics
               const cpuInfoCmd = 'powershell -Command "$cpu = Get-WmiObject Win32_Processor; $cpu.NumberOfCores; $cpu.MaxClockSpeed"';
-              const cpuInfo = await this.sshService.executeCommand(cpuInfoCmd, server.ipv4, server.sshUser);
+              const cpuInfo = await this.sshService.executeCommandOnServer(cpuInfoCmd, server);
               const cpuParts = cpuInfo.trim().split(/\s+/);
               const cores = parseInt(cpuParts[0] || '4', 10);
               const freqMhz = parseInt(cpuParts[1] || '3200', 10);
@@ -290,12 +289,12 @@ echo "---------------------------------------------------"
 
               // CPU usage
               const cpuUsageCmd = 'powershell -Command "(Get-Counter \'\\Processor(_Total)\\% Processor Time\').CounterSamples[0].CookedValue"';
-              const cpuUsage = await this.sshService.executeCommand(cpuUsageCmd, server.ipv4, server.sshUser);
+              const cpuUsage = await this.sshService.executeCommandOnServer(cpuUsageCmd, server);
               const cpuPercent = parseFloat(cpuUsage.trim()) || 0;
 
               // RAM info
               const ramCmd = 'powershell -Command "$mem = Get-WmiObject Win32_ComputerSystem; $total = [math]::Round($mem.TotalPhysicalMemory / 1GB, 0); $free = [math]::Round((Get-WmiObject Win32_OperatingSystem).FreePhysicalMemory / 1MB, 0); Write-Output \"$total $($total - $free)\""';
-              const ramInfo = await this.sshService.executeCommand(ramCmd, server.ipv4, server.sshUser);
+              const ramInfo = await this.sshService.executeCommandOnServer(ramCmd, server);
               const ramParts = ramInfo.trim().split(/\s+/);
               const ramTotal = parseInt(ramParts[0] || '16', 10);
               const ramUsed = parseInt(ramParts[1] || '2', 10);
@@ -303,14 +302,14 @@ echo "---------------------------------------------------"
 
               // Uptime
               const uptimeCmd = 'powershell -Command "$os = Get-WmiObject Win32_OperatingSystem; $uptime = (Get-Date) - $os.ConvertToDateTime($os.LastBootUpTime); Write-Output \"$($uptime.Days)d $($uptime.Hours)h $($uptime.Minutes)m\""';
-              const uptime = await this.sshService.executeCommand(uptimeCmd, server.ipv4, server.sshUser);
+              const uptime = await this.sshService.executeCommandOnServer(uptimeCmd, server);
               const uptimeFormatted = uptime.trim() || '14d 02h 12m';
 
               // Network stats (WireGuard on Windows - try wg.exe if available)
               let networkInbound = 0;
               let networkOutbound = 0;
               try {
-                  const wgTransfer = await this.sshService.executeCommand('wg show wg0 transfer', server.ipv4, server.sshUser);
+                  const wgTransfer = await this.sshService.executeCommandOnServer('wg show wg0 transfer', server);
                   const lines = wgTransfer.split('\n').filter(l => l.trim() && !l.startsWith('peer'));
                   let totalRx = 0, totalTx = 0;
                   lines.forEach(line => {
@@ -338,33 +337,33 @@ echo "---------------------------------------------------"
               };
           } else {
               // Linux Server metrics (existing code)
-              const cpuInfo = await this.sshService.executeCommand('nproc && lscpu | grep "CPU MHz" | head -1', server.ipv4, server.sshUser);
+              const cpuInfo = await this.sshService.executeCommandOnServer('nproc && lscpu | grep "CPU MHz" | head -1', server);
               const cores = parseInt(cpuInfo.split('\n')[0] || '4', 10);
               const freqMatch = cpuInfo.match(/(\d+\.?\d*)/);
               const frequency = freqMatch ? `${(parseFloat(freqMatch[1]) / 1000).toFixed(1)}GHz` : '3.2GHz';
 
-              const cpuUsage = await this.sshService.executeCommand("top -bn1 | grep 'Cpu(s)' | sed 's/.*, *\\([0-9.]*\\)%* id.*/\\1/' | awk '{print 100 - $1}'", server.ipv4, server.sshUser);
+              const cpuUsage = await this.sshService.executeCommandOnServer("top -bn1 | grep 'Cpu(s)' | sed 's/.*, *\\([0-9.]*\\)%* id.*/\\1/' | awk '{print 100 - $1}'", server);
               const cpuPercent = parseFloat(cpuUsage.trim()) || 0;
 
-              const ramInfo = await this.sshService.executeCommand('free -m | grep Mem', server.ipv4, server.sshUser);
+              const ramInfo = await this.sshService.executeCommandOnServer('free -m | grep Mem', server);
               const ramMatch = ramInfo.match(/(\d+)\s+(\d+)/);
               const ramTotal = ramMatch ? parseInt(ramMatch[1], 10) : 16;
               const ramUsed = ramMatch ? parseInt(ramMatch[2], 10) : 2;
               const ramUsage = Math.round((ramUsed / ramTotal) * 100);
 
-              const loadAvg = await this.sshService.executeCommand('uptime | awk -F\'load average:\' \'{print $2}\' | awk \'{print $1","$2","$3}\' | tr -d ","', server.ipv4, server.sshUser);
+              const loadAvg = await this.sshService.executeCommandOnServer('uptime | awk -F\'load average:\' \'{print $2}\' | awk \'{print $1","$2","$3}\' | tr -d ","', server);
               const loadParts = loadAvg.trim().split(/\s+/);
               const avg1 = parseFloat(loadParts[0] || '0.45');
               const avg5 = parseFloat(loadParts[1] || '0.32');
               const avg15 = parseFloat(loadParts[2] || '0.15');
 
-              const uptime = await this.sshService.executeCommand('uptime -p', server.ipv4, server.sshUser);
+              const uptime = await this.sshService.executeCommandOnServer('uptime -p', server);
               const uptimeFormatted = uptime.trim().replace('up ', '') || '14d 02h 12m';
 
               let networkInbound = 0;
               let networkOutbound = 0;
               try {
-                  const wgTransfer = await this.sshService.executeCommand('sudo wg show wg0 transfer | tail -n +2 | awk \'{rx+=$2; tx+=$3} END {print rx, tx}\'', server.ipv4, server.sshUser);
+                  const wgTransfer = await this.sshService.executeCommandOnServer('sudo wg show wg0 transfer | tail -n +2 | awk \'{rx+=$2; tx+=$3} END {print rx, tx}\'', server);
                   const transferMatch = wgTransfer.match(/(\d+)\s+(\d+)/);
                   if (transferMatch) {
                       networkInbound = parseInt(transferMatch[1], 10);
@@ -412,7 +411,7 @@ echo "---------------------------------------------------"
           if (isWindows) {
               // Windows: Get Event Log entries for WireGuard
               const logCmd = `powershell -Command "Get-EventLog -LogName Application -Source '*WireGuard*' -Newest ${lines} -ErrorAction SilentlyContinue | ForEach-Object { Write-Output ('$($_.TimeGenerated.ToString(\"HH:mm:ss\")) $($_.EntryType) $($_.Source) $($_.Message)') }"`;
-              const logs = await this.sshService.executeCommand(logCmd, server.ipv4, server.sshUser);
+              const logs = await this.sshService.executeCommandOnServer(logCmd, server);
               const logLines = logs.split('\n').filter(l => l.trim()).map(line => {
                   const parts = line.trim().split(/\s+/);
                   if (parts.length >= 4) {
@@ -432,7 +431,7 @@ echo "---------------------------------------------------"
               return logLines.slice(-lines);
           } else {
               // Linux: Get WireGuard logs from journalctl
-              const logs = await this.sshService.executeCommand(`sudo journalctl -u wg-quick@wg0 -n ${lines} --no-pager | tail -${lines}`, server.ipv4, server.sshUser);
+              const logs = await this.sshService.executeCommandOnServer(`sudo journalctl -u wg-quick@wg0 -n ${lines} --no-pager | tail -${lines}`, server);
               const logLines = logs.split('\n').filter(l => l.trim()).map(line => {
                   const match = line.match(/(\d{2}:\d{2}:\d{2}).*?(\w+):\s*(.+)/);
                   if (match) {
@@ -488,7 +487,7 @@ echo "---------------------------------------------------"
                       command = 'powershell -Command "$svc = Get-Service -Name \'WireGuardTunnel*wg0*\' -ErrorAction SilentlyContinue; if ($svc) { if ($svc.Status -eq \'Running\') { Write-Output \'running\' } else { Write-Output \'stopped\' } } else { Write-Output \'unknown\' }"';
                       break;
               }
-              const output = await this.sshService.executeCommand(command, server.ipv4, server.sshUser);
+              const output = await this.sshService.executeCommandOnServer(command, server);
               isRunning = action === 'status' ? output.trim().toLowerCase() === 'running' : action !== 'stop';
           } else {
               // Linux: Use systemctl
@@ -506,7 +505,7 @@ echo "---------------------------------------------------"
                       command = 'sudo systemctl is-active wg-quick@wg0';
                       break;
               }
-              const output = await this.sshService.executeCommand(command, server.ipv4, server.sshUser);
+              const output = await this.sshService.executeCommandOnServer(command, server);
               isRunning = action === 'status' ? output.trim() === 'active' : action !== 'stop';
           }
 
@@ -538,7 +537,7 @@ echo "---------------------------------------------------"
           if (isWindows) {
               // Windows: Get firewall rules via PowerShell
               const fwCmd = 'powershell -Command "Get-NetFirewallRule | Where-Object { $_.Direction -eq \'Inbound\' } | ForEach-Object { $port = (Get-NetFirewallPortFilter -AssociatedNetFirewallRule $_).LocalPort; $proto = (Get-NetFirewallPortFilter -AssociatedNetFirewallRule $_).Protocol; $action = $_.Action; Write-Output \"$port $proto $action $($_.DisplayName)\" }"';
-              const fwRules = await this.sshService.executeCommand(fwCmd, server.ipv4, server.sshUser);
+              const fwRules = await this.sshService.executeCommandOnServer(fwCmd, server);
               const rules = fwRules.split('\n').filter(l => l.trim()).map((line, idx) => {
                   const parts = line.trim().split(/\s+/);
                   if (parts.length >= 3) {
@@ -560,7 +559,7 @@ echo "---------------------------------------------------"
               ];
           } else {
               // Linux: Get UFW rules
-              const ufwRules = await this.sshService.executeCommand('sudo ufw status numbered | tail -n +4', server.ipv4, server.sshUser);
+              const ufwRules = await this.sshService.executeCommandOnServer('sudo ufw status numbered | tail -n +4', server);
               const rules = ufwRules.split('\n').filter(l => l.trim() && !l.includes('Status:')).map((line, idx) => {
                   const match = line.match(/(\d+)\s+(\w+)\s+(\w+)\s+(\d+)\/(\w+)/);
                   if (match) {
@@ -641,7 +640,7 @@ echo "---------------------------------------------------"
               };
           } else {
               // Linux: Read WireGuard config file
-              const configContent = await this.sshService.executeCommand('sudo cat /etc/wireguard/wg0.conf', server.ipv4, server.sshUser);
+              const configContent = await this.sshService.executeCommandOnServer('sudo cat /etc/wireguard/wg0.conf', server);
               
               // Parse config
               const portMatch = configContent.match(/ListenPort\s*=\s*(\d+)/);

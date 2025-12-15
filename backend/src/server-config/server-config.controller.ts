@@ -19,8 +19,8 @@ export class ServerConfigController {
    */
   @Post('detect-os')
   @Roles(UserRole.ADMIN)
-  async detectOS(@Body() body: { ipv4: string; sshUser?: string }) {
-    return this.detectionService.detectOS(body.ipv4, body.sshUser || 'root');
+  async detectOS(@Body() body: { ipv4: string; sshUser?: string; sshPassword?: string }) {
+    return this.detectionService.detectOS(body.ipv4, body.sshUser || 'root', body.sshPassword);
   }
 
   /**
@@ -28,8 +28,8 @@ export class ServerConfigController {
    */
   @Post('check-requirements')
   @Roles(UserRole.ADMIN)
-  async checkRequirements(@Body() body: { ipv4: string; sshUser?: string }) {
-    return this.detectionService.checkRequirements(body.ipv4, body.sshUser || 'root');
+  async checkRequirements(@Body() body: { ipv4: string; sshUser?: string; sshPassword?: string }) {
+    return this.detectionService.checkRequirements(body.ipv4, body.sshUser || 'root', undefined, body.sshPassword);
   }
 
   /**
@@ -41,6 +41,7 @@ export class ServerConfigController {
     @Body() body: {
       ipv4: string;
       sshUser?: string;
+      sshPassword?: string;
       name: string;
       city: string;
       country: string;
@@ -58,7 +59,9 @@ export class ServerConfigController {
         country: body.country,
         countryCode: body.countryCode,
         wgPort: body.wgPort || 51820,
-      }
+        sshPassword: body.sshPassword, // Store password in server record
+      },
+      body.sshPassword
     );
   }
 }

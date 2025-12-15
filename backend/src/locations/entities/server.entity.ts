@@ -36,6 +36,9 @@ export class Server {
   @Column({ default: 'root' })
   sshUser: string;
 
+  @Column({ nullable: true, type: 'text' })
+  sshPassword: string; // Encrypted password (optional - if provided, used as fallback when key auth fails)
+
   @Column({ default: true })
   isActive: boolean;
 

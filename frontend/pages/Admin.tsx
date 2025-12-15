@@ -33,7 +33,7 @@ export const AdminDashboard: React.FC = () => {
     const [provisionScript, setProvisionScript] = useState('');
 
     // Forms
-    const [newServer, setNewServer] = useState({ name: '', city: '', country: '', countryCode: '', ipv4: '', sshUser: 'root', wgPort: 51820 });
+    const [newServer, setNewServer] = useState({ name: '', city: '', country: '', countryCode: '', ipv4: '', sshUser: 'root', sshPassword: '', wgPort: 51820 });
     const [serverConfigMode, setServerConfigMode] = useState<'auto' | 'manual'>('auto');
     const [autoConfigProgress, setAutoConfigProgress] = useState<string[]>([]);
     const [isDetectingOS, setIsDetectingOS] = useState(false);
@@ -79,11 +79,11 @@ export const AdminDashboard: React.FC = () => {
         setIsDetectingOS(true);
         setAutoConfigProgress(['Connecting to server...']);
         try {
-            const osInfo = await apiClient.detectServerOS(newServer.ipv4, newServer.sshUser);
+            const osInfo = await apiClient.detectServerOS(newServer.ipv4, newServer.sshUser, newServer.sshPassword);
             setDetectedOS(osInfo);
             setAutoConfigProgress(prev => [...prev, `Detected: ${osInfo.type} ${osInfo.distribution || ''} ${osInfo.version || ''}`]);
             
-            const requirements = await apiClient.checkServerRequirements(newServer.ipv4, newServer.sshUser);
+            const requirements = await apiClient.checkServerRequirements(newServer.ipv4, newServer.sshUser, newServer.sshPassword);
             setServerRequirements(requirements);
             setAutoConfigProgress(prev => [...prev, `Requirements checked. Missing: ${requirements.missingPackages.length} packages`]);
         } catch (e: any) {
@@ -105,6 +105,7 @@ export const AdminDashboard: React.FC = () => {
                 const result = await apiClient.autoConfigureServer({
                     ipv4: newServer.ipv4,
                     sshUser: newServer.sshUser,
+                    sshPassword: newServer.sshPassword,
                     name: newServer.name,
                     city: newServer.city,
                     country: newServer.country,
@@ -115,7 +116,7 @@ export const AdminDashboard: React.FC = () => {
                 setAutoConfigProgress(result.steps);
                 addToast('success', 'Server auto-configured and added successfully!');
                 setShowServerModal(false);
-                setNewServer({ name: '', city: '', country: '', countryCode: '', ipv4: '', sshUser: 'root', wgPort: 51820 });
+                setNewServer({ name: '', city: '', country: '', countryCode: '', ipv4: '', sshUser: 'root', sshPassword: '', wgPort: 51820 });
                 setDetectedOS(null);
                 setServerRequirements(null);
                 fetchStats();
@@ -124,7 +125,7 @@ export const AdminDashboard: React.FC = () => {
                 await apiClient.addServer(newServer);
                 addToast('success', 'Server added');
                 setShowServerModal(false);
-                setNewServer({ name: '', city: '', country: '', countryCode: '', ipv4: '', sshUser: 'root', wgPort: 51820 });
+                setNewServer({ name: '', city: '', country: '', countryCode: '', ipv4: '', sshUser: 'root', sshPassword: '', wgPort: 51820 });
                 fetchStats();
             }
         } catch (e: any) {
@@ -707,6 +708,20 @@ export const AdminDashboard: React.FC = () => {
                                 />
                                 <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 ml-1">SSH username (default: root)</p>
                             </div>
+                        </div>
+                        
+                        {/* SSH Password (Optional) */}
+                        <div>
+                            <Input 
+                                type="password"
+                                label="SSH Password (Optional)" 
+                                value={newServer.sshPassword} 
+                                onChange={e => setNewServer({ ...newServer, sshPassword: e.target.value })} 
+                                placeholder="Leave empty to use SSH key authentication" 
+                            />
+                            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 ml-1">
+                                If your server requires password authentication, enter it here. Otherwise, leave empty to use SSH key.
+                            </p>
                         </div>
 
                         {/* Auto Config Section */}

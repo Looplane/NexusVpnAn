@@ -7,6 +7,7 @@ interface SshConnectionConfig {
   username: string;
   port?: number;
   timeout?: number;
+  password?: string; // Optional password for authentication
 }
 
 @Injectable()
@@ -79,13 +80,33 @@ export class SshService {
   }
 
   /**
+   * Execute a command on a server using the server's SSH credentials.
+   * Automatically uses password if key authentication fails or password is provided.
+   */
+  async executeCommandOnServer(
+    command: string,
+    server: { ipv4: string; sshUser: string; sshPassword?: string },
+    maxRetries: number = 3
+  ): Promise<string> {
+    return this.executeCommand(
+      command,
+      server.ipv4,
+      server.sshUser,
+      maxRetries,
+      server.sshPassword
+    );
+  }
+
+  /**
    * Execute a command on a remote server with automatic retry and exponential backoff.
+   * Supports both key-based and password authentication.
    */
   async executeCommand(
     command: string,
     host: string = '127.0.0.1',
     username: string = 'root',
-    maxRetries: number = 3
+    maxRetries: number = 3,
+    password?: string // Optional password for authentication
   ): Promise<string> {
 
     // Simulation / Mock Mode
@@ -93,15 +114,17 @@ export class SshService {
       return this.simulateCommand(command, host);
     }
 
-    if (!this.privateKey) {
-      throw new Error('SSH Private Key is missing. Cannot connect to remote nodes.');
+    // If no key and no password, we can't authenticate
+    if (!this.privateKey && !password) {
+      throw new Error('SSH Private Key and password are both missing. Cannot connect to remote nodes.');
     }
 
     let lastError: Error;
 
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       try {
-        const result = await this.executeWithTimeout(command, { host, username }, 15000);
+        // Try key-based auth first, then password if key fails
+        const result = await this.executeWithTimeout(command, { host, username, password }, 15000);
         return result;
       } catch (error) {
         lastError = error;
@@ -183,13 +206,29 @@ export class SshService {
           this.logger.error(`[SSH Connection Error ${config.host}] ${err.message}`);
           reject(err);
         }
-      }).connect({
+      });
+
+      // Build connection options - try key first, then password
+      const connectOptions: any = {
         host: config.host,
         port: config.port || 22,
         username: config.username,
-        privateKey: this.privateKey,
         readyTimeout: config.timeout || 10000,
-      });
+      };
+
+      // Try key-based authentication first if key is available
+      if (this.privateKey) {
+        connectOptions.privateKey = this.privateKey;
+      }
+
+      // Add password if provided (will be used if key auth fails or no key available)
+      if (config.password) {
+        connectOptions.password = config.password;
+        // If we have both key and password, try key first, then password
+        connectOptions.tryKeyboard = false;
+      }
+
+      conn.connect(connectOptions);
     });
   }
 
