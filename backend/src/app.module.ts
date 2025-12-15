@@ -57,9 +57,11 @@ import { LoginHistory } from './auth/entities/login-history.entity';
             synchronize: true, // Note: In a real prod app, use migrations instead of sync
             ssl: isProduction ? { rejectUnauthorized: false } : false, // Required for Supabase/Neon/Render
             extra: {
-              // Supabase connection pooler compatibility
-              application_name: 'nexusvpn-api',
-            },
+          // Force IPv4 for Render compatibility (temporary)
+          family: 4,
+          // Supabase connection pooler compatibility
+          application_name: 'nexusvpn-api',
+        },
           };
         }
 
