@@ -95,7 +95,11 @@ else
     if [ -d "frontend" ]; then
         log "Updating frontend..."
         cd frontend
-        npm ci || npm install
+        # Try npm ci first, fall back to npm install if lock file is out of sync
+        if ! npm ci 2>/dev/null; then
+            warn "package-lock.json out of sync, updating..."
+            npm install
+        fi
         cd ..
     fi
     
