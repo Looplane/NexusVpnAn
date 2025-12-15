@@ -169,12 +169,12 @@ export const AdminDashboard: React.FC = () => {
                 {/* Tab Navigation */}
                 <div className="flex space-x-1 mb-8 bg-white dark:bg-slate-900 p-1 rounded-xl inline-flex border border-slate-200 dark:border-slate-800 shadow-sm">
                     {[
-                        { id: 'overview', icon: Activity, label: 'Overview' },
-                        { id: 'servers', icon: Server, label: 'Nodes' },
+                        { id: 'overview', icon: Activity, label: 'Dashboard' },
+                        { id: 'servers', icon: Server, label: 'VPN Servers' },
                         { id: 'users', icon: Users, label: 'Users' },
                         { id: 'marketing', icon: Tag, label: 'Marketing' },
                         { id: 'audit', icon: FileText, label: 'Audit Log' },
-                        { id: 'settings', icon: SettingsIcon, label: 'Configuration' }
+                        { id: 'settings', icon: SettingsIcon, label: 'Settings' }
                     ].map(tab => (
                         <button
                             key={tab.id}
@@ -333,26 +333,91 @@ export const AdminDashboard: React.FC = () => {
                 {/* Servers Tab */}
                 {(activeTab === 'servers') && (
                     <div className="mb-10">
-                        <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-4">Infrastructure Nodes</h2>
-                        <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden">
-                            <table className="min-w-full divide-y divide-slate-200 dark:divide-slate-800">
-                                <thead className="bg-slate-50 dark:bg-slate-950"><tr><th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Name</th><th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Location</th><th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">IP</th><th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Load</th><th className="px-6 py-3 text-right">Actions</th></tr></thead>
-                                <tbody className="divide-y divide-slate-200 dark:divide-slate-800">{stats.servers.map((s: any) => (
-                                    <tr key={s.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium cursor-pointer text-slate-900 dark:text-white hover:text-brand-500" onClick={() => { setSelectedServer(s); setInspectorTab('dashboard'); setShowServerWindow(true); }}>{s.name}</td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">{s.city}, {s.countryCode}</td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500 font-mono">{s.ipv4}</td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">
-                                            <div className="flex items-center"><div className="w-16 bg-slate-200 dark:bg-slate-700 h-1.5 rounded-full mr-2 overflow-hidden"><div className="bg-emerald-500 h-full" style={{ width: `${s.load}%` }}></div></div>{s.load}%</div>
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-right">
-                                            <button onClick={() => { setSelectedServer(s); setInspectorTab('terminal'); setShowServerWindow(true); }} className="text-brand-600 hover:text-brand-500 mr-4"><Terminal size={16} /></button>
-                                            <button onClick={() => handleRemoveServer(s.id)} className="text-red-500 hover:text-red-400"><Trash2 size={16} /></button>
-                                        </td>
-                                    </tr>
-                                ))}</tbody>
-                            </table>
+                        <div className="flex justify-between items-center mb-4">
+                            <h2 className="text-xl font-bold text-slate-900 dark:text-white">VPN Servers</h2>
+                            {stats.servers.length === 0 && (
+                                <p className="text-sm text-slate-500 dark:text-slate-400">No servers added yet. Click "Add VPN Server" to get started.</p>
+                            )}
                         </div>
+                        {stats.servers.length > 0 ? (
+                            <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-sm">
+                                <table className="min-w-full divide-y divide-slate-200 dark:divide-slate-800">
+                                    <thead className="bg-slate-50 dark:bg-slate-950">
+                                        <tr>
+                                            <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Server Name</th>
+                                            <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Location</th>
+                                            <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">IP Address</th>
+                                            <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Status</th>
+                                            <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Load</th>
+                                            <th className="px-6 py-3 text-right text-xs font-medium text-slate-500 uppercase tracking-wider">Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
+                                        {stats.servers.map((s: any) => (
+                                            <tr key={s.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium cursor-pointer text-slate-900 dark:text-white hover:text-brand-500" onClick={() => { setSelectedServer(s); setInspectorTab('dashboard'); setShowServerWindow(true); }}>
+                                                    {s.name}
+                                                </td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">
+                                                    {s.city}, {s.countryCode}
+                                                </td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400 font-mono">
+                                                    {s.ipv4}
+                                                </td>
+                                                <td className="px-6 py-4 whitespace-nowrap">
+                                                    <Badge variant={s.status === 'Online' ? 'success' : 'danger'}>
+                                                        {s.status || 'Offline'}
+                                                    </Badge>
+                                                </td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">
+                                                    <div className="flex items-center">
+                                                        <div className="w-20 bg-slate-200 dark:bg-slate-700 h-2 rounded-full mr-2 overflow-hidden">
+                                                            <div 
+                                                                className={`h-full ${s.load > 80 ? 'bg-red-500' : s.load > 50 ? 'bg-amber-500' : 'bg-emerald-500'}`} 
+                                                                style={{ width: `${s.load || 0}%` }}
+                                                            ></div>
+                                                        </div>
+                                                        <span className="text-xs">{s.load || 0}%</span>
+                                                    </div>
+                                                </td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-right">
+                                                    <button 
+                                                        onClick={() => { setSelectedServer(s); setInspectorTab('dashboard'); setShowServerWindow(true); }} 
+                                                        className="text-brand-600 hover:text-brand-500 mr-3" 
+                                                        title="View Details"
+                                                    >
+                                                        <Edit2 size={16} />
+                                                    </button>
+                                                    <button 
+                                                        onClick={() => { setSelectedServer(s); setInspectorTab('terminal'); setShowServerWindow(true); }} 
+                                                        className="text-brand-600 hover:text-brand-500 mr-3" 
+                                                        title="Terminal Access"
+                                                    >
+                                                        <Terminal size={16} />
+                                                    </button>
+                                                    <button 
+                                                        onClick={() => handleRemoveServer(s.id)} 
+                                                        className="text-red-500 hover:text-red-400" 
+                                                        title="Delete Server"
+                                                    >
+                                                        <Trash2 size={16} />
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        ) : (
+                            <Card className="p-12 text-center">
+                                <Server className="mx-auto text-slate-400 mb-4" size={48} />
+                                <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-2">No VPN Servers Added</h3>
+                                <p className="text-slate-500 dark:text-slate-400 mb-4">Get started by adding your first WireGuard VPN server</p>
+                                <Button onClick={() => setShowServerModal(true)}>
+                                    <Plus size={18} className="mr-2" /> Add Your First Server
+                                </Button>
+                            </Card>
+                        )}
                     </div>
                 )}
 
@@ -523,20 +588,76 @@ export const AdminDashboard: React.FC = () => {
 
                 {/* --- MODALS --- */}
                 {/* ... (Modals remain unchanged) ... */}
-                <Modal isOpen={showServerModal} onClose={() => setShowServerModal(false)} title="Add VPN Node">
+                <Modal isOpen={showServerModal} onClose={() => setShowServerModal(false)} title="Add New VPN Server">
                     <form onSubmit={handleAddServer} className="space-y-4">
-                        <Input label="Server Name" value={newServer.name} onChange={e => setNewServer({ ...newServer, name: e.target.value })} required placeholder="e.g. Frankfurt Node 1" />
-                        <Input label="City" value={newServer.city} onChange={e => setNewServer({ ...newServer, city: e.target.value })} required placeholder="e.g. Frankfurt" />
+                        <div>
+                            <Input 
+                                label="Server Name" 
+                                value={newServer.name} 
+                                onChange={e => setNewServer({ ...newServer, name: e.target.value })} 
+                                required 
+                                placeholder="e.g. Frankfurt Node 1" 
+                            />
+                            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 ml-1">A friendly name to identify this server</p>
+                        </div>
+                        
+                        <div>
+                            <Input 
+                                label="City" 
+                                value={newServer.city} 
+                                onChange={e => setNewServer({ ...newServer, city: e.target.value })} 
+                                required 
+                                placeholder="e.g. Frankfurt" 
+                            />
+                            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 ml-1">City where the server is located</p>
+                        </div>
+                        
                         <div className="grid grid-cols-2 gap-4">
-                            <Input label="Country" value={newServer.country} onChange={e => setNewServer({ ...newServer, country: e.target.value })} required placeholder="e.g. Germany" />
-                            <Input label="Country Code" value={newServer.countryCode} onChange={e => setNewServer({ ...newServer, countryCode: e.target.value.toUpperCase() })} required maxLength={2} placeholder="e.g. DE" />
+                            <div>
+                                <Input 
+                                    label="Country (Full Name)" 
+                                    value={newServer.country} 
+                                    onChange={e => setNewServer({ ...newServer, country: e.target.value })} 
+                                    required 
+                                    placeholder="e.g. Germany" 
+                                />
+                                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 ml-1">Full country name</p>
+                            </div>
+                            <div>
+                                <Input 
+                                    label="Country Code" 
+                                    value={newServer.countryCode} 
+                                    onChange={e => setNewServer({ ...newServer, countryCode: e.target.value.toUpperCase() })} 
+                                    required 
+                                    maxLength={2} 
+                                    placeholder="e.g. DE" 
+                                />
+                                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 ml-1">2-letter ISO code</p>
+                            </div>
                         </div>
-                        <Input label="IPv4 Address" value={newServer.ipv4} onChange={e => setNewServer({ ...newServer, ipv4: e.target.value })} required placeholder="e.g. 46.62.201.216" />
-                        <div className="text-xs text-slate-500 dark:text-slate-400">
-                            <p>💡 The system will automatically fetch the WireGuard public key via SSH.</p>
-                            <p>💡 Make sure SSH access is configured before adding the server.</p>
+                        
+                        <div>
+                            <Input 
+                                label="Server IP Address (IPv4)" 
+                                value={newServer.ipv4} 
+                                onChange={e => setNewServer({ ...newServer, ipv4: e.target.value })} 
+                                required 
+                                placeholder="e.g. 46.62.201.216" 
+                            />
+                            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 ml-1">Public IPv4 address of your WireGuard server</p>
                         </div>
-                        <Button type="submit" isLoading={isAddingServer} className="w-full">Add Server</Button>
+                        
+                        <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3 text-xs text-blue-800 dark:text-blue-200">
+                            <p className="font-semibold mb-1">📋 Important Notes:</p>
+                            <ul className="list-disc list-inside space-y-1 ml-2">
+                                <li>The system will automatically fetch the WireGuard public key via SSH</li>
+                                <li>Make sure SSH access is configured before adding the server</li>
+                                <li>SSH user defaults to 'root' (can be changed later)</li>
+                                <li>Server must have WireGuard installed and running</li>
+                            </ul>
+                        </div>
+                        
+                        <Button type="submit" isLoading={isAddingServer} className="w-full">Add VPN Server</Button>
                     </form>
                 </Modal>
 
