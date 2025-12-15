@@ -148,7 +148,7 @@ export const AdminDashboard: React.FC = () => {
                         </div>
 
                         <div className="flex space-x-3">
-                            {activeTab === 'servers' && <Button onClick={() => setShowServerModal(true)}><Plus size={18} className="mr-2" /> Deploy Node</Button>}
+                            {activeTab === 'servers' && <Button onClick={() => setShowServerModal(true)}><Plus size={18} className="mr-2" /> Add VPN Server</Button>}
                             {activeTab === 'marketing' && <Button onClick={() => setShowCouponModal(true)}><Plus size={18} className="mr-2" /> Create Coupon</Button>}
                         </div>
                     </div>
