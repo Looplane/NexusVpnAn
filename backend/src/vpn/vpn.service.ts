@@ -2,6 +2,7 @@ import { Injectable, Logger, InternalServerErrorException, NotFoundException, Fo
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { VpnConfig } from './entities/vpn-config.entity';
+import { Server } from '../locations/entities/server.entity';
 import { SshService } from '../ssh/ssh.service';
 import { LocationsService } from '../locations/locations.service';
 import { IpamService } from './ipam.service';
@@ -19,6 +20,8 @@ export class VpnService {
   constructor(
     @InjectRepository(VpnConfig)
     private vpnConfigRepository: Repository<VpnConfig>,
+    @InjectRepository(Server)
+    private serverRepository: Repository<Server>,
     private sshService: SshService,
     private locationsService: LocationsService,
     private ipamService: IpamService,
@@ -62,13 +65,22 @@ export class VpnService {
     const { privateKey, publicKey } = this.generateKeypair();
     const assignedIp = await this.ipamService.assignIp(server.id, userId);
 
-    try {
-      await this.provisionPeerOnServer(publicKey, assignedIp, server.ipv4, server.sshUser);
-    } catch (error) {
-      this.logger.error(`Failed to provision peer on ${server.ipv4}: ${error.message}`);
-      if (process.env.NODE_ENV === 'production') {
-        // In prod, if provisioning fails, we shouldn't return a config that won't work
-        throw new InternalServerErrorException('Failed to provision VPN tunnel on remote node');
+    // In production, provisioning must succeed
+    if (process.env.NODE_ENV === 'production' && process.env.MOCK_SSH !== 'true') {
+      try {
+        await this.provisionPeerOnServer(publicKey, assignedIp, server.ipv4, server.sshUser);
+        this.logger.log(`Successfully provisioned peer on ${server.name} (${server.ipv4})`);
+      } catch (error) {
+        this.logger.error(`Failed to provision peer on ${server.ipv4}: ${error.message}`);
+        // In production, if provisioning fails, we shouldn't return a config that won't work
+        throw new InternalServerErrorException(`Failed to provision VPN tunnel on remote node: ${error.message}`);
+      }
+    } else {
+      // In dev/mock mode, try but don't fail
+      try {
+        await this.provisionPeerOnServer(publicKey, assignedIp, server.ipv4, server.sshUser);
+      } catch (error) {
+        this.logger.warn(`Provisioning failed (dev mode): ${error.message}`);
       }
     }
 
@@ -85,27 +97,46 @@ export class VpnService {
     // 6. Audit
     await this.auditService.log('VPN_KEY_GENERATED', userId, configEntity.id, `Location: ${server.city} (${server.ipv4})`);
 
-    return this.formatConfigFile(privateKey, assignedIp, server, dto.dns, dto.mtu);
+    // 7. Get server public key for config file
+    let serverPublicKey = server.publicKey;
+    if (!serverPublicKey || serverPublicKey.includes('PLACEHOLDER') || serverPublicKey.includes('mock')) {
+      try {
+        serverPublicKey = await this.sshService.executeCommand('cat /etc/wireguard/publickey', server.ipv4, server.sshUser);
+        if (serverPublicKey && !serverPublicKey.includes('mock') && serverPublicKey.length > 10) {
+          serverPublicKey = serverPublicKey.trim();
+          // Update server record
+          server.publicKey = serverPublicKey;
+          await this.serverRepository.save(server);
+        } else {
+          throw new Error('Invalid key');
+        }
+      } catch (e) {
+        this.logger.warn(`Could not fetch public key for ${server.name}: ${e.message}`);
+        serverPublicKey = 'SERVER_PUBLIC_KEY_PLACEHOLDER_BASE64';
+      }
+    }
+
+    return this.formatConfigFile(privateKey, assignedIp, server, serverPublicKey, dto.dns, dto.mtu);
   }
 
   async revokeConfig(userId: string, configId: string) {
-    const config = await this.vpnConfigRepository.findOne({ where: { id: configId }, relations: ['server'] }); // IMPORTANT: Join server to get IP
+    const config = await this.vpnConfigRepository.findOne({ where: { id: configId }, relations: ['server'] });
     if (!config) throw new NotFoundException('Configuration not found');
 
     if (config.userId !== userId) {
       throw new ForbiddenException('You do not own this device');
     }
 
-    // Note: VpnConfig entity needs 'server' relation or we fetch manually
-    // Assuming for now we fetch server via locationId
     const server = await this.locationsService.findOne(config.locationId);
 
-    if (server) {
+    if (server && process.env.MOCK_SSH !== 'true') {
       try {
         const command = `sudo wg set wg0 peer ${config.publicKey} remove`;
         await this.sshService.executeCommand(command, server.ipv4, server.sshUser);
+        this.logger.log(`Removed peer ${config.publicKey.substring(0, 8)}... from ${server.name}`);
       } catch (e) {
         this.logger.warn(`Failed to remove peer from WG server ${server.ipv4}: ${e.message}`);
+        // Continue with DB removal even if SSH fails
       }
     }
 
@@ -117,14 +148,30 @@ export class VpnService {
 
   private async provisionPeerOnServer(publicKey: string, allowedIp: string, host: string, user: string) {
     const interfaceName = 'wg0';
-    const command = `sudo wg set ${interfaceName} peer ${publicKey} allowed-ips ${allowedIp}`;
+    // Remove /32 suffix if present for WireGuard command
+    const cleanIp = allowedIp.replace('/32', '');
+    const command = `sudo wg set ${interfaceName} peer ${publicKey} allowed-ips ${cleanIp}/32`;
+    
+    this.logger.debug(`Provisioning peer ${publicKey.substring(0, 8)}... on ${host} with IP ${cleanIp}`);
     const output = await this.sshService.executeCommand(command, host, user);
+    
+    // Verify peer was added
+    const verifyCommand = `sudo wg show ${interfaceName} dump | grep ${publicKey}`;
+    try {
+      const verify = await this.sshService.executeCommand(verifyCommand, host, user);
+      if (!verify || verify.includes('mock') || verify.includes('SIMULATION')) {
+        throw new Error('Peer verification failed');
+      }
+      this.logger.debug(`Peer verified on ${host}`);
+    } catch (e) {
+      this.logger.warn(`Could not verify peer on ${host}, but continuing...`);
+    }
+    
     return output;
   }
 
-  private formatConfigFile(privateKey: string, address: string, server: any, dns = '1.1.1.1', mtu = 1420): string {
-    const endpoint = `${server.ipv4}:${server.wgPort}`;
-    const serverPublicKey = server.publicKey || 'SERVER_PUBLIC_KEY_PLACEHOLDER_BASE64';
+  private formatConfigFile(privateKey: string, address: string, server: any, serverPublicKey: string, dns = '1.1.1.1', mtu = 1420): string {
+    const endpoint = `${server.ipv4}:${server.wgPort || 51820}`;
 
     return `[Interface]
 PrivateKey = ${privateKey}

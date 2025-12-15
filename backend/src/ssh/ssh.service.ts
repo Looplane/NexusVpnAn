@@ -23,7 +23,24 @@ export class SshService {
 
   private loadKeys() {
     // In production, we mount the key into the container at this path
-    const keyPath = process.env.SSH_KEY_PATH || '/etc/nexusvpn/id_rsa';
+    // Try multiple possible paths
+    const possiblePaths = [
+      process.env.SSH_PRIVATE_KEY_PATH,
+      process.env.SSH_KEY_PATH,
+      '/opt/nexusvpn/.ssh/id_rsa',
+      '/etc/nexusvpn/id_rsa',
+    ].filter(Boolean);
+
+    let keyPath = possiblePaths[0] || '/opt/nexusvpn/.ssh/id_rsa';
+    
+    // Find first existing key path
+    for (const path of possiblePaths) {
+      if (fs.existsSync(path)) {
+        keyPath = path;
+        break;
+      }
+    }
+
     const pubKeyPath = keyPath + '.pub';
 
     try {

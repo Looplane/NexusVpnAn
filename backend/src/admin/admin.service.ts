@@ -51,23 +51,29 @@ export class AdminService {
       await this.auditService.log('SERVER_ADDED', adminId, saved.id, `Added server ${saved.name}`);
 
       // 2. Attempt to fetch WireGuard Public Key via SSH
-      try {
-          this.logger.log(`Attempting to fetch public key for ${saved.name} (${saved.ipv4})...`);
-          
-          const pubKey = await this.sshService.executeCommand(
-              'cat /etc/wireguard/publickey', 
-              saved.ipv4, 
-              saved.sshUser
-          );
-          
-          if (pubKey && !pubKey.includes('mock') && pubKey.length > 10) {
-              saved.publicKey = pubKey.trim();
-              await this.serverRepo.save(saved);
-              this.logger.log(`Successfully fetched public key for ${saved.name}`);
+      if (process.env.MOCK_SSH !== 'true') {
+          try {
+              this.logger.log(`Attempting to fetch public key for ${saved.name} (${saved.ipv4})...`);
+              
+              const pubKey = await this.sshService.executeCommand(
+                  'cat /etc/wireguard/publickey', 
+                  saved.ipv4, 
+                  saved.sshUser
+              );
+              
+              if (pubKey && !pubKey.includes('mock') && !pubKey.includes('SIMULATION') && pubKey.length > 10) {
+                  saved.publicKey = pubKey.trim();
+                  await this.serverRepo.save(saved);
+                  this.logger.log(`Successfully fetched public key for ${saved.name}`);
+              } else {
+                  this.logger.warn(`Invalid public key received for ${saved.name}`);
+              }
+          } catch (e) {
+              this.logger.warn(`Could not fetch public key for server ${saved.name}: ${e.message}`);
+              // We don't fail the request, just log it. Key can be added manually later.
           }
-      } catch (e) {
-          this.logger.warn(`Could not fetch public key for server ${saved.name}: ${e.message}`);
-          // We don't fail the request, just log it. Key can be added manually later.
+      } else {
+          this.logger.debug(`Skipping public key fetch for ${saved.name} (MOCK_SSH=true)`);
       }
 
       return saved;
