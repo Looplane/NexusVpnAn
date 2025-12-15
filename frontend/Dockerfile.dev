@@ -1,0 +1,54 @@
+# =============================================================================
+# NEXUSVPN FRONTEND DOCKERFILE - DEVELOPMENT
+# =============================================================================
+# Development environment with hot reload
+# Includes Vite development server
+
+FROM node:20-alpine
+
+# Set working directory
+WORKDIR /app
+
+# Install system dependencies
+RUN apk add --no-cache \
+    git \
+    bash \
+    curl
+
+# Install global development tools
+RUN npm install -g \
+    vite \
+    @vitejs/plugin-react
+
+# Copy package files
+COPY package*.json ./
+COPY yarn.lock* ./
+
+# Install dependencies
+RUN npm install
+
+# Copy source code
+COPY . .
+
+# Create non-root user
+RUN addgroup -g 1001 -S nodejs && \
+    adduser -S react -u 1001 -G nodejs && \
+    chown -R react:nodejs /app
+
+# Switch to non-root user
+USER react
+
+# Expose port
+EXPOSE 3000
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+  CMD wget -q --spider http://localhost:3000 || exit 1
+
+# Start development server
+CMD ["npm", "run", "dev"]
+
+# Labels for metadata
+LABEL maintainer="NexusVPN Team"
+LABEL version="1.0.0"
+LABEL description="NexusVPN Frontend - Development Environment"

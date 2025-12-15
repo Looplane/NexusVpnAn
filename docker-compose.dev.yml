@@ -1,0 +1,136 @@
+# =============================================================================
+# NEXUSVPN DOCKER COMPOSE - DEVELOPMENT
+# =============================================================================
+# Complete development environment with hot reload
+# Includes backend, frontend, and PostgreSQL database
+
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:16-alpine
+    container_name: nexusvpn-db-dev
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: nexusvpn
+      POSTGRES_PASSWORD: devpassword123
+      POSTGRES_DB: nexusvpn_dev
+    ports:
+      - '5432:5432'
+    volumes:
+      - postgres_dev_data:/var/lib/postgresql/data
+      - ./backend/database/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    networks:
+      - nexusvpn-dev
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U nexusvpn -d nexusvpn_dev"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  # Backend API (Development with hot reload)
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile.dev
+    container_name: nexusvpn-backend-dev
+    restart: unless-stopped
+    ports:
+      - '3001:3001'
+    environment:
+      NODE_ENV: development
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: nexusvpn
+      DB_PASSWORD: devpassword123
+      DB_NAME: nexusvpn_dev
+      JWT_SECRET: dev-jwt-secret-key
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+      - ./infrastructure/keys/id_rsa:/etc/nexusvpn/id_rsa:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - nexusvpn-dev
+    command: npm run start:dev
+
+  # Frontend (Development with hot reload)
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile.dev
+    container_name: nexusvpn-frontend-dev
+    restart: unless-stopped
+    ports:
+      - '3000:3000'
+    environment:
+      NODE_ENV: development
+      VITE_API_URL: http://localhost:3001
+      VITE_WS_URL: ws://localhost:3001
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    depends_on:
+      - backend
+    networks:
+      - nexusvpn-dev
+    command: npm run dev
+
+  # Redis (for sessions and caching)
+  redis:
+    image: redis:7-alpine
+    container_name: nexusvpn-redis-dev
+    restart: unless-stopped
+    ports:
+      - '6379:6379'
+    volumes:
+      - redis_dev_data:/data
+    networks:
+      - nexusvpn-dev
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    command: redis-server --appendonly yes
+
+  # Adminer (Database management UI)
+  adminer:
+    image: adminer:latest
+    container_name: nexusvpn-adminer-dev
+    restart: unless-stopped
+    ports:
+      - '8080:8080'
+    environment:
+      ADMINER_DEFAULT_SERVER: postgres
+      ADMINER_DESIGN: pepa-linha
+    depends_on:
+      - postgres
+    networks:
+      - nexusvpn-dev
+
+  # MailHog (Email testing)
+  mailhog:
+    image: mailhog/mailhog:latest
+    container_name: nexusvpn-mailhog-dev
+    restart: unless-stopped
+    ports:
+      - '1025:1025'  # SMTP
+      - '8025:8025'  # Web UI
+    networks:
+      - nexusvpn-dev
+
+volumes:
+  postgres_dev_data:
+  redis_dev_data:
+
+networks:
+  nexusvpn-dev:
+    driver: bridge
