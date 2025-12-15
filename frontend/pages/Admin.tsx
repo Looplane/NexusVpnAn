@@ -139,20 +139,28 @@ export const AdminDashboard: React.FC = () => {
         }
         
         // Auto-fill WireGuard port from fingerprint or parsed config
-        if (fingerprint?.wireguard?.listenPort) {
+        if (fingerprint?.wireguard?.listenPort && !newServer.wgPort) {
             updates.wgPort = fingerprint.wireguard.listenPort;
         }
         
-        // Try to infer location from hostname (if contains city/country codes)
+        // Try to infer location from multiple sources
+        // 1. From hostname patterns
         if (fingerprint?.hostname) {
             const hostname = fingerprint.hostname.toLowerCase();
-            // Common city patterns
+            // Common city patterns (expanded list)
             const cityPatterns: { [key: string]: { city: string; country: string; code: string } } = {
                 'frankfurt': { city: 'Frankfurt', country: 'Germany', code: 'DE' },
                 'nuremberg': { city: 'Nuremberg', country: 'Germany', code: 'DE' },
+                'berlin': { city: 'Berlin', country: 'Germany', code: 'DE' },
+                'munich': { city: 'Munich', country: 'Germany', code: 'DE' },
+                'hamburg': { city: 'Hamburg', country: 'Germany', code: 'DE' },
                 'london': { city: 'London', country: 'United Kingdom', code: 'GB' },
+                'manchester': { city: 'Manchester', country: 'United Kingdom', code: 'GB' },
                 'newyork': { city: 'New York', country: 'United States', code: 'US' },
+                'nyc': { city: 'New York', country: 'United States', code: 'US' },
                 'losangeles': { city: 'Los Angeles', country: 'United States', code: 'US' },
+                'la': { city: 'Los Angeles', country: 'United States', code: 'US' },
+                'chicago': { city: 'Chicago', country: 'United States', code: 'US' },
                 'tokyo': { city: 'Tokyo', country: 'Japan', code: 'JP' },
                 'singapore': { city: 'Singapore', country: 'Singapore', code: 'SG' },
                 'ashburn': { city: 'Ashburn', country: 'United States', code: 'US' },
@@ -160,6 +168,19 @@ export const AdminDashboard: React.FC = () => {
                 'dallas': { city: 'Dallas', country: 'United States', code: 'US' },
                 'paris': { city: 'Paris', country: 'France', code: 'FR' },
                 'amsterdam': { city: 'Amsterdam', country: 'Netherlands', code: 'NL' },
+                'madrid': { city: 'Madrid', country: 'Spain', code: 'ES' },
+                'barcelona': { city: 'Barcelona', country: 'Spain', code: 'ES' },
+                'milan': { city: 'Milan', country: 'Italy', code: 'IT' },
+                'rome': { city: 'Rome', country: 'Italy', code: 'IT' },
+                'sydney': { city: 'Sydney', country: 'Australia', code: 'AU' },
+                'melbourne': { city: 'Melbourne', country: 'Australia', code: 'AU' },
+                'toronto': { city: 'Toronto', country: 'Canada', code: 'CA' },
+                'vancouver': { city: 'Vancouver', country: 'Canada', code: 'CA' },
+                'mumbai': { city: 'Mumbai', country: 'India', code: 'IN' },
+                'delhi': { city: 'Delhi', country: 'India', code: 'IN' },
+                'seoul': { city: 'Seoul', country: 'South Korea', code: 'KR' },
+                'hongkong': { city: 'Hong Kong', country: 'Hong Kong', code: 'HK' },
+                'hong-kong': { city: 'Hong Kong', country: 'Hong Kong', code: 'HK' },
             };
             
             for (const [pattern, location] of Object.entries(cityPatterns)) {
@@ -171,6 +192,42 @@ export const AdminDashboard: React.FC = () => {
                 }
             }
         }
+        
+        // 2. From timezone (if hostname didn't provide location)
+        if (!updates.city && fingerprint?.timezone) {
+            const tz = fingerprint.timezone.toLowerCase();
+            const tzPatterns: { [key: string]: { city: string; country: string; code: string } } = {
+                'europe/berlin': { city: 'Berlin', country: 'Germany', code: 'DE' },
+                'europe/frankfurt': { city: 'Frankfurt', country: 'Germany', code: 'DE' },
+                'europe/london': { city: 'London', country: 'United Kingdom', code: 'GB' },
+                'america/new_york': { city: 'New York', country: 'United States', code: 'US' },
+                'america/los_angeles': { city: 'Los Angeles', country: 'United States', code: 'US' },
+                'america/chicago': { city: 'Chicago', country: 'United States', code: 'US' },
+                'asia/tokyo': { city: 'Tokyo', country: 'Japan', code: 'JP' },
+                'asia/singapore': { city: 'Singapore', country: 'Singapore', code: 'SG' },
+                'europe/paris': { city: 'Paris', country: 'France', code: 'FR' },
+                'europe/amsterdam': { city: 'Amsterdam', country: 'Netherlands', code: 'NL' },
+                'europe/madrid': { city: 'Madrid', country: 'Spain', code: 'ES' },
+                'europe/rome': { city: 'Rome', country: 'Italy', code: 'IT' },
+                'australia/sydney': { city: 'Sydney', country: 'Australia', code: 'AU' },
+                'america/toronto': { city: 'Toronto', country: 'Canada', code: 'CA' },
+                'asia/mumbai': { city: 'Mumbai', country: 'India', code: 'IN' },
+                'asia/seoul': { city: 'Seoul', country: 'South Korea', code: 'KR' },
+                'asia/hong_kong': { city: 'Hong Kong', country: 'Hong Kong', code: 'HK' },
+            };
+            
+            for (const [pattern, location] of Object.entries(tzPatterns)) {
+                if (tz.includes(pattern.replace(/_/g, ''))) {
+                    if (!newServer.city.trim()) updates.city = location.city;
+                    if (!newServer.country.trim()) updates.country = location.country;
+                    if (!newServer.countryCode.trim()) updates.countryCode = location.code;
+                    break;
+                }
+            }
+        }
+        
+        // 3. From network interface IP (if we can geolocate)
+        // This would require an external API, so we'll skip for now
         
         // Apply updates
         if (Object.keys(updates).length > 0) {
@@ -829,8 +886,8 @@ export const AdminDashboard: React.FC = () => {
                         </div>
 
                         {/* Server IP and SSH User (Required for both modes) */}
-                        <div className="grid grid-cols-2 gap-4">
-                            <div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                            <div className="sm:col-span-1 lg:col-span-2">
                                 <Input 
                                     label="Server IP Address (IPv4)" 
                                     value={newServer.ipv4} 
@@ -886,13 +943,14 @@ export const AdminDashboard: React.FC = () => {
                                             {isDetectingOS ? 'Detecting...' : '🔍 Detect Server & Check Requirements'}
                                         </Button>
                                         
-                                        {/* Fetch WireGuard Config Button (if already detected) */}
-                                        {detectedOS && !serverFingerprint?.wireguard?.installed && (
+                                        {/* Fetch WireGuard Config Button (always show if OS detected) */}
+                                        {detectedOS && (
                                             <Button
                                                 type="button"
                                                 onClick={async () => {
                                                     try {
                                                         addToast('info', 'Fetching WireGuard config...');
+                                                        setAutoConfigProgress(prev => [...prev, 'Fetching WireGuard configuration...']);
                                                         const result = await apiClient.fetchWireGuardConfig(newServer.ipv4, newServer.sshUser, newServer.sshPassword);
                                                         if (result.success && result.config) {
                                                             setImportedConfig(result.config);
@@ -903,18 +961,21 @@ export const AdminDashboard: React.FC = () => {
                                                                     setNewServer(prev => ({ ...prev, wgPort: parsed.parsed.listenPort }));
                                                                 }
                                                             }
+                                                            setAutoConfigProgress(prev => [...prev, '✅ WireGuard config fetched']);
                                                             addToast('success', 'WireGuard config fetched!');
                                                         } else {
-                                                            addToast('warning', 'WireGuard config not found on server.');
+                                                            setAutoConfigProgress(prev => [...prev, '⚠️ WireGuard config not found (trying alternative paths...)']);
+                                                            addToast('warning', 'WireGuard config not found on server. The system will try to locate it automatically.');
                                                         }
                                                     } catch (e: any) {
+                                                        setAutoConfigProgress(prev => [...prev, `❌ Failed to fetch config: ${e.message}`]);
                                                         addToast('error', `Failed: ${e.message}`);
                                                     }
                                                 }}
                                                 variant="outline"
                                                 className="w-full border-emerald-300 dark:border-emerald-700 text-emerald-700 dark:text-emerald-300"
                                             >
-                                                <Download size={14} className="mr-2" /> Fetch WireGuard Config
+                                                <Download size={14} className="mr-2" /> Fetch WireGuard Config from Server
                                             </Button>
                                         )}
                                     </div>
@@ -995,114 +1056,138 @@ export const AdminDashboard: React.FC = () => {
 
                                 {/* Server Fingerprint (Enhanced Details) */}
                                 {serverFingerprint && (
-                                    <div className="bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-lg p-3">
-                                        <p className="text-xs font-semibold text-purple-900 dark:text-purple-200 mb-2 flex items-center">
-                                            <Fingerprint size={14} className="mr-2" /> Server Fingerprint
+                                    <div className="bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-lg p-4">
+                                        <p className="text-sm font-semibold text-purple-900 dark:text-purple-200 mb-3 flex items-center">
+                                            <Fingerprint size={16} className="mr-2" /> Server Fingerprint
                                         </p>
-                                        <div className="space-y-2 text-xs">
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 text-xs">
                                             {serverFingerprint.hostname && (
-                                                <div className="flex justify-between">
-                                                    <span className="text-slate-600 dark:text-slate-400">Hostname:</span>
-                                                    <span className="font-semibold text-slate-900 dark:text-white">{serverFingerprint.hostname}</span>
+                                                <div className="sm:col-span-2 lg:col-span-3">
+                                                    <div className="flex justify-between items-center p-2 bg-white dark:bg-slate-800 rounded">
+                                                        <span className="text-slate-600 dark:text-slate-400 font-medium">Hostname:</span>
+                                                        <span className="font-semibold text-slate-900 dark:text-white">{serverFingerprint.hostname}</span>
+                                                    </div>
                                                 </div>
                                             )}
                                             {serverFingerprint.cpu && (
-                                                <div className="grid grid-cols-2 gap-2">
+                                                <>
                                                     {serverFingerprint.cpu.model && (
-                                                        <div className="col-span-2">
-                                                            <span className="text-slate-600 dark:text-slate-400">CPU:</span>
-                                                            <span className="ml-2 font-semibold text-slate-900 dark:text-white">{serverFingerprint.cpu.model}</span>
+                                                        <div className="sm:col-span-2 lg:col-span-3">
+                                                            <div className="flex justify-between items-center p-2 bg-white dark:bg-slate-800 rounded">
+                                                                <span className="text-slate-600 dark:text-slate-400 font-medium">CPU:</span>
+                                                                <span className="font-semibold text-slate-900 dark:text-white text-right">{serverFingerprint.cpu.model}</span>
+                                                            </div>
                                                         </div>
                                                     )}
                                                     {serverFingerprint.cpu.cores && (
                                                         <div>
-                                                            <span className="text-slate-600 dark:text-slate-400">Cores:</span>
-                                                            <span className="ml-2 font-semibold text-slate-900 dark:text-white">{serverFingerprint.cpu.cores}</span>
+                                                            <div className="flex justify-between items-center p-2 bg-white dark:bg-slate-800 rounded">
+                                                                <span className="text-slate-600 dark:text-slate-400 font-medium">Cores:</span>
+                                                                <span className="font-semibold text-slate-900 dark:text-white">{serverFingerprint.cpu.cores}</span>
+                                                            </div>
                                                         </div>
                                                     )}
                                                     {serverFingerprint.cpu.frequency && (
                                                         <div>
-                                                            <span className="text-slate-600 dark:text-slate-400">Frequency:</span>
-                                                            <span className="ml-2 font-semibold text-slate-900 dark:text-white">{serverFingerprint.cpu.frequency}</span>
+                                                            <div className="flex justify-between items-center p-2 bg-white dark:bg-slate-800 rounded">
+                                                                <span className="text-slate-600 dark:text-slate-400 font-medium">Frequency:</span>
+                                                                <span className="font-semibold text-slate-900 dark:text-white">{serverFingerprint.cpu.frequency}</span>
+                                                            </div>
                                                         </div>
                                                     )}
-                                                </div>
+                                                </>
                                             )}
                                             {serverFingerprint.memory && (
-                                                <div className="grid grid-cols-2 gap-2">
+                                                <>
                                                     <div>
-                                                        <span className="text-slate-600 dark:text-slate-400">RAM Total:</span>
-                                                        <span className="ml-2 font-semibold text-slate-900 dark:text-white">{serverFingerprint.memory.total}MB</span>
+                                                        <div className="flex justify-between items-center p-2 bg-white dark:bg-slate-800 rounded">
+                                                            <span className="text-slate-600 dark:text-slate-400 font-medium">RAM Total:</span>
+                                                            <span className="font-semibold text-slate-900 dark:text-white">{serverFingerprint.memory.total}MB</span>
+                                                        </div>
                                                     </div>
                                                     <div>
-                                                        <span className="text-slate-600 dark:text-slate-400">RAM Available:</span>
-                                                        <span className="ml-2 font-semibold text-slate-900 dark:text-white">{serverFingerprint.memory.available}MB</span>
+                                                        <div className="flex justify-between items-center p-2 bg-white dark:bg-slate-800 rounded">
+                                                            <span className="text-slate-600 dark:text-slate-400 font-medium">RAM Available:</span>
+                                                            <span className="font-semibold text-slate-900 dark:text-white">{serverFingerprint.memory.available}MB</span>
+                                                        </div>
                                                     </div>
-                                                </div>
+                                                </>
                                             )}
                                             {serverFingerprint.disk && (
-                                                <div className="grid grid-cols-2 gap-2">
+                                                <>
                                                     <div>
-                                                        <span className="text-slate-600 dark:text-slate-400">Disk Total:</span>
-                                                        <span className="ml-2 font-semibold text-slate-900 dark:text-white">{serverFingerprint.disk.total}GB</span>
+                                                        <div className="flex justify-between items-center p-2 bg-white dark:bg-slate-800 rounded">
+                                                            <span className="text-slate-600 dark:text-slate-400 font-medium">Disk Total:</span>
+                                                            <span className="font-semibold text-slate-900 dark:text-white">{serverFingerprint.disk.total}GB</span>
+                                                        </div>
                                                     </div>
                                                     <div>
-                                                        <span className="text-slate-600 dark:text-slate-400">Disk Available:</span>
-                                                        <span className="ml-2 font-semibold text-slate-900 dark:text-white">{serverFingerprint.disk.available}GB</span>
+                                                        <div className="flex justify-between items-center p-2 bg-white dark:bg-slate-800 rounded">
+                                                            <span className="text-slate-600 dark:text-slate-400 font-medium">Disk Available:</span>
+                                                            <span className="font-semibold text-slate-900 dark:text-white">{serverFingerprint.disk.available}GB</span>
+                                                        </div>
                                                     </div>
-                                                </div>
+                                                </>
                                             )}
                                             {serverFingerprint.uptime && (
-                                                <div className="flex justify-between">
-                                                    <span className="text-slate-600 dark:text-slate-400">Uptime:</span>
-                                                    <span className="font-semibold text-slate-900 dark:text-white">{serverFingerprint.uptime}</span>
+                                                <div>
+                                                    <div className="flex justify-between items-center p-2 bg-white dark:bg-slate-800 rounded">
+                                                        <span className="text-slate-600 dark:text-slate-400 font-medium">Uptime:</span>
+                                                        <span className="font-semibold text-slate-900 dark:text-white">{serverFingerprint.uptime}</span>
+                                                    </div>
                                                 </div>
                                             )}
                                             {serverFingerprint.timezone && (
-                                                <div className="flex justify-between">
-                                                    <span className="text-slate-600 dark:text-slate-400">Timezone:</span>
-                                                    <span className="font-semibold text-slate-900 dark:text-white">{serverFingerprint.timezone}</span>
+                                                <div>
+                                                    <div className="flex justify-between items-center p-2 bg-white dark:bg-slate-800 rounded">
+                                                        <span className="text-slate-600 dark:text-slate-400 font-medium">Timezone:</span>
+                                                        <span className="font-semibold text-slate-900 dark:text-white text-xs">{serverFingerprint.timezone}</span>
+                                                    </div>
                                                 </div>
                                             )}
                                             {serverFingerprint.network && serverFingerprint.network.interfaces && serverFingerprint.network.interfaces.length > 0 && (
-                                                <div className="mt-2 pt-2 border-t border-purple-300 dark:border-purple-700">
-                                                    <p className="text-purple-800 dark:text-purple-300 mb-1 font-semibold">Network Interfaces:</p>
-                                                    {serverFingerprint.network.interfaces.map((iface: any, idx: number) => (
-                                                        <div key={idx} className="flex justify-between text-xs mb-1">
-                                                            <span className="text-slate-600 dark:text-slate-400">{iface.name}:</span>
-                                                            <span className="font-mono text-slate-900 dark:text-white">{iface.ip}</span>
-                                                        </div>
-                                                    ))}
+                                                <div className="sm:col-span-2 lg:col-span-3 mt-2 pt-3 border-t border-purple-300 dark:border-purple-700">
+                                                    <p className="text-purple-800 dark:text-purple-300 mb-2 font-semibold text-xs">Network Interfaces:</p>
+                                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                                        {serverFingerprint.network.interfaces.map((iface: any, idx: number) => (
+                                                            <div key={idx} className="flex justify-between items-center p-2 bg-white dark:bg-slate-800 rounded text-xs">
+                                                                <span className="text-slate-600 dark:text-slate-400 font-medium">{iface.name}:</span>
+                                                                <span className="font-mono text-slate-900 dark:text-white">{iface.ip}</span>
+                                                            </div>
+                                                        ))}
+                                                    </div>
                                                 </div>
                                             )}
                                             {serverFingerprint.wireguard && (
-                                                <div className="mt-2 pt-2 border-t border-purple-300 dark:border-purple-700">
-                                                    <div className="flex justify-between mb-1">
-                                                        <span className="text-purple-800 dark:text-purple-300">WireGuard:</span>
+                                                <div className="sm:col-span-2 lg:col-span-3 mt-2 pt-3 border-t border-purple-300 dark:border-purple-700">
+                                                    <div className="flex justify-between items-center mb-2">
+                                                        <span className="text-purple-800 dark:text-purple-300 font-semibold text-xs">WireGuard:</span>
                                                         <Badge variant={serverFingerprint.wireguard.installed ? 'success' : 'danger'}>
                                                             {serverFingerprint.wireguard.installed ? 'Installed' : 'Not Installed'}
                                                         </Badge>
                                                     </div>
-                                                    {serverFingerprint.wireguard.listenPort && (
-                                                        <div className="flex justify-between text-xs">
-                                                            <span className="text-slate-600 dark:text-slate-400">Listen Port:</span>
-                                                            <span className="font-semibold text-slate-900 dark:text-white">{serverFingerprint.wireguard.listenPort}</span>
-                                                        </div>
-                                                    )}
-                                                    {serverFingerprint.wireguard.interfaceIP && (
-                                                        <div className="flex justify-between text-xs">
-                                                            <span className="text-slate-600 dark:text-slate-400">Interface IP:</span>
-                                                            <span className="font-semibold text-slate-900 dark:text-white">{serverFingerprint.wireguard.interfaceIP}</span>
-                                                        </div>
-                                                    )}
-                                                    {serverFingerprint.wireguard.publicKey && (
-                                                        <div className="flex justify-between text-xs">
-                                                            <span className="text-slate-600 dark:text-slate-400">Public Key:</span>
-                                                            <span className="font-mono text-xs text-slate-900 dark:text-white truncate max-w-[150px]" title={serverFingerprint.wireguard.publicKey}>
-                                                                {serverFingerprint.wireguard.publicKey.substring(0, 20)}...
-                                                            </span>
-                                                        </div>
-                                                    )}
+                                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                                        {serverFingerprint.wireguard.listenPort && (
+                                                            <div className="flex justify-between items-center p-2 bg-white dark:bg-slate-800 rounded text-xs">
+                                                                <span className="text-slate-600 dark:text-slate-400 font-medium">Listen Port:</span>
+                                                                <span className="font-semibold text-slate-900 dark:text-white">{serverFingerprint.wireguard.listenPort}</span>
+                                                            </div>
+                                                        )}
+                                                        {serverFingerprint.wireguard.interfaceIP && (
+                                                            <div className="flex justify-between items-center p-2 bg-white dark:bg-slate-800 rounded text-xs">
+                                                                <span className="text-slate-600 dark:text-slate-400 font-medium">Interface IP:</span>
+                                                                <span className="font-semibold text-slate-900 dark:text-white">{serverFingerprint.wireguard.interfaceIP}</span>
+                                                            </div>
+                                                        )}
+                                                        {serverFingerprint.wireguard.publicKey && (
+                                                            <div className="sm:col-span-2 flex justify-between items-center p-2 bg-white dark:bg-slate-800 rounded text-xs">
+                                                                <span className="text-slate-600 dark:text-slate-400 font-medium">Public Key:</span>
+                                                                <span className="font-mono text-xs text-slate-900 dark:text-white truncate max-w-[200px]" title={serverFingerprint.wireguard.publicKey}>
+                                                                    {serverFingerprint.wireguard.publicKey.substring(0, 30)}...
+                                                                </span>
+                                                            </div>
+                                                        )}
+                                                    </div>
                                                 </div>
                                             )}
                                         </div>

@@ -477,27 +477,38 @@ export class ServerDetectionService {
           fingerprint.uptime = uptime.trim();
         } catch (e) {}
 
-        // Check WireGuard
+        // Check WireGuard - use dynamic path finding
         try {
-          const wgPath = 'C:\\Program Files\\WireGuard\\Data\\Configurations\\wg0.conf';
-          const wgExists = await this.sshService.executeCommand(
-            `powershell -Command "Test-Path '${wgPath}'"`,
-            ipv4, sshUser, 3, password
-          );
-          if (wgExists && wgExists.trim().toLowerCase() === 'true') {
+          const wgPath = await this.findWireGuardConfigPath(ipv4, sshUser, osInfo, password);
+          if (wgPath) {
             fingerprint.wireguard = { installed: true, configPath: wgPath };
             try {
               const wgConfig = await this.sshService.executeCommand(
-                `powershell -Command "Get-Content '${wgPath}'"`,
+                `powershell -Command "Get-Content '${wgPath}' -ErrorAction SilentlyContinue"`,
                 ipv4, sshUser, 3, password
               );
-              const listenPortMatch = wgConfig.match(/ListenPort\s*=\s*(\d+)/i);
-              const addressMatch = wgConfig.match(/Address\s*=\s*([^\s]+)/i);
-              if (listenPortMatch) fingerprint.wireguard!.listenPort = parseInt(listenPortMatch[1], 10);
-              if (addressMatch) fingerprint.wireguard!.interfaceIP = addressMatch[1];
+              if (wgConfig && !wgConfig.includes('Cannot find path')) {
+                const listenPortMatch = wgConfig.match(/ListenPort\s*=\s*(\d+)/i);
+                const addressMatch = wgConfig.match(/Address\s*=\s*([^\s]+)/i);
+                if (listenPortMatch) fingerprint.wireguard!.listenPort = parseInt(listenPortMatch[1], 10);
+                if (addressMatch) fingerprint.wireguard!.interfaceIP = addressMatch[1];
+              }
             } catch (e) {}
           } else {
-            fingerprint.wireguard = { installed: false };
+            // Check if WireGuard service exists even if config not found
+            try {
+              const wgService = await this.sshService.executeCommand(
+                'powershell -Command "Get-Service -Name \"WireGuardTunnel*\" -ErrorAction SilentlyContinue | Select-Object -First 1"',
+                ipv4, sshUser, 3, password
+              );
+              if (wgService && wgService.trim()) {
+                fingerprint.wireguard = { installed: true };
+              } else {
+                fingerprint.wireguard = { installed: false };
+              }
+            } catch (e) {
+              fingerprint.wireguard = { installed: false };
+            }
           }
         } catch (e) {
           fingerprint.wireguard = { installed: false };
@@ -599,20 +610,21 @@ export class ServerDetectionService {
           }
         } catch (e) {}
 
-        // Check WireGuard
+        // Check WireGuard - use dynamic path finding
         try {
           const wgCheck = await this.sshService.executeCommand(
             'which wg 2>/dev/null && echo "installed" || echo "not-installed"',
             ipv4, sshUser, 3, password
           );
           if (wgCheck && wgCheck.includes('installed')) {
-            fingerprint.wireguard = { installed: true, configPath: '/etc/wireguard/wg0.conf' };
+            const wgPath = await this.findWireGuardConfigPath(ipv4, sshUser, osInfo, password) || '/etc/wireguard/wg0.conf';
+            fingerprint.wireguard = { installed: true, configPath: wgPath };
             try {
               const wgConfig = await this.sshService.executeCommand(
-                'sudo cat /etc/wireguard/wg0.conf 2>/dev/null || cat /etc/wireguard/wg0.conf 2>/dev/null || echo ""',
+                `sudo cat ${wgPath} 2>/dev/null || cat ${wgPath} 2>/dev/null || echo ""`,
                 ipv4, sshUser, 3, password
               );
-              if (wgConfig && !wgConfig.includes('No such file')) {
+              if (wgConfig && !wgConfig.includes('No such file') && !wgConfig.includes('Permission denied')) {
                 const listenPortMatch = wgConfig.match(/ListenPort\s*=\s*(\d+)/i);
                 const addressMatch = wgConfig.match(/Address\s*=\s*([^\s]+)/i);
                 const pubKeyMatch = wgConfig.match(/PublicKey\s*=\s*([^\s]+)/i);
@@ -636,25 +648,161 @@ export class ServerDetectionService {
   }
 
   /**
+   * Find WireGuard config path dynamically
+   */
+  private async findWireGuardConfigPath(ipv4: string, sshUser: string, osInfo: OSInfo, password?: string): Promise<string | null> {
+    try {
+      if (osInfo.type === 'windows') {
+        // Windows: Try multiple possible paths
+        const possiblePaths = [
+          'C:\\Program Files\\WireGuard\\Data\\Configurations\\wg0.conf',
+          'C:\\Program Files (x86)\\WireGuard\\Data\\Configurations\\wg0.conf',
+          'C:\\ProgramData\\WireGuard\\Configurations\\wg0.conf',
+          'C:\\Users\\Administrator\\AppData\\Local\\Packages\\WireGuard\\Data\\Configurations\\wg0.conf',
+        ];
+
+        // Also try to find via WireGuard service
+        try {
+          const wgService = await this.sshService.executeCommand(
+            'powershell -Command "Get-Service -Name \"WireGuardTunnel*\" -ErrorAction SilentlyContinue | Select-Object -First 1 -ExpandProperty Name"',
+            ipv4, sshUser, 3, password
+          );
+          if (wgService && wgService.trim()) {
+            // Try to get config path from service
+            const servicePath = await this.sshService.executeCommand(
+              `powershell -Command "(Get-WmiObject Win32_Service -Filter \"Name='${wgService.trim()}'\" | Select-Object -ExpandProperty PathName) -replace 'wireguard.exe', 'Data\\Configurations\\wg0.conf'"`,
+              ipv4, sshUser, 3, password
+            ).catch(() => null);
+            if (servicePath && servicePath.trim()) {
+              possiblePaths.unshift(servicePath.trim());
+            }
+          }
+        } catch (e) {
+          // Continue with default paths
+        }
+
+        // Try each path
+        for (const path of possiblePaths) {
+          try {
+            const exists = await this.sshService.executeCommand(
+              `powershell -Command "Test-Path '${path}'"`,
+              ipv4, sshUser, 3, password
+            );
+            if (exists && exists.trim().toLowerCase() === 'true') {
+              return path;
+            }
+          } catch (e) {
+            // Try next path
+          }
+        }
+
+        // Last resort: Search for wg0.conf in common locations
+        try {
+          const foundPath = await this.sshService.executeCommand(
+            'powershell -Command "Get-ChildItem -Path \"C:\\Program Files\", \"C:\\Program Files (x86)\", \"C:\\ProgramData\" -Recurse -Filter \"wg0.conf\" -ErrorAction SilentlyContinue | Select-Object -First 1 -ExpandProperty FullName"',
+            ipv4, sshUser, 5, password
+          );
+          if (foundPath && foundPath.trim() && !foundPath.includes('Error')) {
+            return foundPath.trim();
+          }
+        } catch (e) {
+          // Search failed
+        }
+
+        return null;
+      } else {
+        // Linux/macOS: Try common paths
+        const possiblePaths = [
+          '/etc/wireguard/wg0.conf',
+          '/usr/local/etc/wireguard/wg0.conf',
+          '/opt/wireguard/wg0.conf',
+          '~/wireguard/wg0.conf',
+          '~/.config/wireguard/wg0.conf',
+        ];
+
+        // Try each path
+        for (const path of possiblePaths) {
+          try {
+            const exists = await this.sshService.executeCommand(
+              `test -f ${path} && echo "exists" || echo "notfound"`,
+              ipv4, sshUser, 3, password
+            );
+            if (exists && exists.includes('exists')) {
+              return path;
+            }
+          } catch (e) {
+            // Try next path
+          }
+        }
+
+        // Last resort: Use find command
+        try {
+          const foundPath = await this.sshService.executeCommand(
+            'find /etc /usr/local /opt /home -name "wg0.conf" 2>/dev/null | head -1',
+            ipv4, sshUser, 5, password
+          );
+          if (foundPath && foundPath.trim() && !foundPath.includes('No such file')) {
+            return foundPath.trim();
+          }
+        } catch (e) {
+          // Search failed
+        }
+
+        return null;
+      }
+    } catch (e) {
+      this.logger.error(`Failed to find WireGuard config path: ${e.message}`);
+      return null;
+    }
+  }
+
+  /**
    * Fetch WireGuard config from remote server
    */
   async fetchWireGuardConfig(ipv4: string, sshUser: string = 'root', password?: string): Promise<string | null> {
     try {
       const osInfo = await this.detectOS(ipv4, sshUser, password);
       
+      // First, try to find the config path dynamically
+      const configPath = await this.findWireGuardConfigPath(ipv4, sshUser, osInfo, password);
+      
       if (osInfo.type === 'windows') {
-        const configPath = 'C:\\Program Files\\WireGuard\\Data\\Configurations\\wg0.conf';
+        if (configPath) {
+          // Use found path
+          const config = await this.sshService.executeCommand(
+            `powershell -Command "Get-Content '${configPath}' -ErrorAction SilentlyContinue"`,
+            ipv4, sshUser, 5, password
+          ).catch(() => null);
+          if (config && config.trim() && !config.includes('Cannot find path')) {
+            return config;
+          }
+        }
+        
+        // Fallback: Try default path
+        const defaultPath = 'C:\\Program Files\\WireGuard\\Data\\Configurations\\wg0.conf';
         const config = await this.sshService.executeCommand(
-          `powershell -Command "Get-Content '${configPath}'"`,
+          `powershell -Command "Get-Content '${defaultPath}' -ErrorAction SilentlyContinue"`,
           ipv4, sshUser, 3, password
         ).catch(() => null);
-        return config;
+        return config && !config.includes('Cannot find path') ? config : null;
       } else {
+        if (configPath) {
+          // Use found path (try with sudo first, then without)
+          const config = await this.sshService.executeCommand(
+            `sudo cat ${configPath} 2>/dev/null || cat ${configPath} 2>/dev/null || echo ""`,
+            ipv4, sshUser, 5, password
+          ).catch(() => null);
+          if (config && config.trim() && !config.includes('No such file') && !config.includes('Permission denied')) {
+            return config;
+          }
+        }
+        
+        // Fallback: Try default path
         const config = await this.sshService.executeCommand(
           'sudo cat /etc/wireguard/wg0.conf 2>/dev/null || cat /etc/wireguard/wg0.conf 2>/dev/null || echo ""',
           ipv4, sshUser, 3, password
         ).catch(() => null);
-        return config && !config.includes('No such file') ? config : null;
+        return config && !config.includes('No such file') && config.trim() ? config : null;
       }
     } catch (e) {
       this.logger.error(`Failed to fetch WireGuard config: ${e.message}`);
