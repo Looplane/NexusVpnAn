@@ -133,9 +133,12 @@ sleep 2
 cd "$DEPLOYMENT_DIR/frontend"
 nohup npm run dev -- --host 0.0.0.0 --port 5173 > /tmp/frontend.log 2>&1 &
 
+# Get server IP dynamically
+SERVER_IP=$(hostname -I | awk '{print $1}')
+
 log "✅ Deployment completed successfully!"
-log "Backend: http://5.161.91.222:3000"
-log "Frontend: http://5.161.91.222:5173"
+log "Backend: http://${SERVER_IP}:3000"
+log "Frontend: http://${SERVER_IP}:5173"
 
 exit 0
 
