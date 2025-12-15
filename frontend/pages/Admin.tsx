@@ -723,9 +723,11 @@ export const AdminDashboard: React.FC = () => {
                                 <div className="flex items-center space-x-3">
                                     <div className="text-right">
                                         <div className="text-xs text-slate-500">Uptime</div>
-                                        <div className="text-sm font-mono text-slate-900 dark:text-white">14d 02h 12m</div>
+                                        <div className="text-sm font-mono text-slate-900 dark:text-white" id={`uptime-${selectedServer.id}`}>Loading...</div>
                                     </div>
-                                    <Badge variant="success">ONLINE</Badge>
+                                    <Badge variant={selectedServer.status === 'Online' || selectedServer.isActive ? 'success' : 'danger'}>
+                                        {selectedServer.status === 'Online' || selectedServer.isActive ? 'ONLINE' : 'OFFLINE'}
+                                    </Badge>
                                 </div>
                             </div>
                             <div className="flex space-x-1 mb-4 bg-slate-100 dark:bg-slate-900 p-1 rounded-lg border border-slate-200 dark:border-slate-800 overflow-x-auto">
