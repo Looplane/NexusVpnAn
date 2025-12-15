@@ -55,6 +55,11 @@ export const apiClient = {
   getAdminStats: async () => fetchWithFallback('/admin/stats', { method: 'GET', headers: getHeaders() }, () => mockApi.getAdminStats()),
   addServer: async (data: any) => fetchWithFallback('/admin/servers', { method: 'POST', headers: getHeaders(), body: JSON.stringify(data) }, () => mockApi.addServer(data)),
   removeServer: async (id: string) => fetchWithFallback(`/admin/servers/${id}`, { method: 'DELETE', headers: getHeaders() }, () => mockApi.removeServer(id)),
+  
+  // Auto-Configuration
+  detectServerOS: async (ipv4: string, sshUser?: string) => fetchWithFallback('/admin/server-config/detect-os', { method: 'POST', headers: getHeaders(), body: JSON.stringify({ ipv4, sshUser }) }, async () => ({ type: 'unknown' })),
+  checkServerRequirements: async (ipv4: string, sshUser?: string) => fetchWithFallback('/admin/server-config/check-requirements', { method: 'POST', headers: getHeaders(), body: JSON.stringify({ ipv4, sshUser }) }, async () => ({ ssh: false, wireguard: false, firewall: false, ipForwarding: false, requiredPorts: [], missingPackages: [], services: { wireguard: 'not-installed', ssh: 'not-installed' } })),
+  autoConfigureServer: async (data: { ipv4: string; sshUser?: string; name: string; city: string; country: string; countryCode: string; wgPort?: number }) => fetchWithFallback('/admin/server-config/auto-configure', { method: 'POST', headers: getHeaders(), body: JSON.stringify(data) }, async () => ({ success: false, server: null, osInfo: { type: 'unknown' }, requirements: {}, steps: [] })),
 
   // Node Provisioning & Control
   getServerSetupScript: async (id: string) => fetchWithFallback(`/admin/servers/${id}/setup-script`, { method: 'GET', headers: getHeaders() }, async () => ({ script: '# Mock Script\napt install wireguard' })),

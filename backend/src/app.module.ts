@@ -20,6 +20,7 @@ import { AuditModule } from './audit/audit.module';
 import { SupportModule } from './support/support.module';
 import { HealthModule } from './health/health.module';
 import { MarketingModule } from './marketing/marketing.module';
+import { ServerConfigModule } from './server-config/server-config.module';
 import { DatabaseConfigService } from './database/database-config.service';
 
 @Module({
@@ -48,6 +49,7 @@ import { DatabaseConfigService } from './database/database-config.service';
     SupportModule,
     HealthModule,
     MarketingModule,
+    ServerConfigModule,
   ],
   controllers: [AppController],
   providers: [

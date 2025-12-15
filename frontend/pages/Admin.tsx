@@ -33,7 +33,12 @@ export const AdminDashboard: React.FC = () => {
     const [provisionScript, setProvisionScript] = useState('');
 
     // Forms
-    const [newServer, setNewServer] = useState({ name: '', city: '', country: '', countryCode: '', ipv4: '' });
+    const [newServer, setNewServer] = useState({ name: '', city: '', country: '', countryCode: '', ipv4: '', sshUser: 'root', wgPort: 51820 });
+    const [serverConfigMode, setServerConfigMode] = useState<'auto' | 'manual'>('auto');
+    const [autoConfigProgress, setAutoConfigProgress] = useState<string[]>([]);
+    const [isDetectingOS, setIsDetectingOS] = useState(false);
+    const [detectedOS, setDetectedOS] = useState<any>(null);
+    const [serverRequirements, setServerRequirements] = useState<any>(null);
     const [isAddingCoupon, setIsAddingCoupon] = useState(false);
     const [showCouponModal, setShowCouponModal] = useState(false);
     const [newCoupon, setNewCoupon] = useState({ code: '', discountPercent: 20, maxUses: 100, expiresAt: '' });
@@ -66,10 +71,68 @@ export const AdminDashboard: React.FC = () => {
     const fetchCampaigns = async () => apiClient.getCampaigns().then(setCampaigns).catch(() => { });
 
     // Handlers
+    const handleDetectServer = async () => {
+        if (!newServer.ipv4) {
+            addToast('error', 'Please enter server IP address first');
+            return;
+        }
+        setIsDetectingOS(true);
+        setAutoConfigProgress(['Connecting to server...']);
+        try {
+            const osInfo = await apiClient.detectServerOS(newServer.ipv4, newServer.sshUser);
+            setDetectedOS(osInfo);
+            setAutoConfigProgress(prev => [...prev, `Detected: ${osInfo.type} ${osInfo.distribution || ''} ${osInfo.version || ''}`]);
+            
+            const requirements = await apiClient.checkServerRequirements(newServer.ipv4, newServer.sshUser);
+            setServerRequirements(requirements);
+            setAutoConfigProgress(prev => [...prev, `Requirements checked. Missing: ${requirements.missingPackages.length} packages`]);
+        } catch (e: any) {
+            addToast('error', `Detection failed: ${e.message}`);
+        } finally {
+            setIsDetectingOS(false);
+        }
+    };
+
     const handleAddServer = async (e: React.FormEvent) => {
-        e.preventDefault(); setIsAddingServer(true);
-        try { await apiClient.addServer(newServer); addToast('success', 'Server added'); setShowServerModal(false); fetchStats(); }
-        catch { addToast('error', 'Failed'); } finally { setIsAddingServer(false); }
+        e.preventDefault();
+        setIsAddingServer(true);
+        setAutoConfigProgress([]);
+        
+        try {
+            if (serverConfigMode === 'auto') {
+                // Auto-configuration
+                setAutoConfigProgress(['Starting auto-configuration...']);
+                const result = await apiClient.autoConfigureServer({
+                    ipv4: newServer.ipv4,
+                    sshUser: newServer.sshUser,
+                    name: newServer.name,
+                    city: newServer.city,
+                    country: newServer.country,
+                    countryCode: newServer.countryCode,
+                    wgPort: newServer.wgPort,
+                });
+                
+                setAutoConfigProgress(result.steps);
+                addToast('success', 'Server auto-configured and added successfully!');
+                setShowServerModal(false);
+                setNewServer({ name: '', city: '', country: '', countryCode: '', ipv4: '', sshUser: 'root', wgPort: 51820 });
+                setDetectedOS(null);
+                setServerRequirements(null);
+                fetchStats();
+            } else {
+                // Manual configuration
+                await apiClient.addServer(newServer);
+                addToast('success', 'Server added');
+                setShowServerModal(false);
+                setNewServer({ name: '', city: '', country: '', countryCode: '', ipv4: '', sshUser: 'root', wgPort: 51820 });
+                fetchStats();
+            }
+        } catch (e: any) {
+            addToast('error', `Failed: ${e.message}`);
+        } finally {
+            setIsAddingServer(false);
+            setAutoConfigProgress([]);
+        }
     };
 
     const handleAddCoupon = async (e: React.FormEvent) => {
@@ -589,8 +652,156 @@ export const AdminDashboard: React.FC = () => {
 
                 {/* --- MODALS --- */}
                 {/* ... (Modals remain unchanged) ... */}
-                <Modal isOpen={showServerModal} onClose={() => setShowServerModal(false)} title="Add New VPN Server">
+                <Modal isOpen={showServerModal} onClose={() => { setShowServerModal(false); setAutoConfigProgress([]); setDetectedOS(null); setServerRequirements(null); }} title="Add New VPN Server">
                     <form onSubmit={handleAddServer} className="space-y-4">
+                        {/* Configuration Mode Toggle */}
+                        <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800 rounded-lg">
+                            <div>
+                                <p className="text-sm font-semibold text-slate-900 dark:text-white">Configuration Mode</p>
+                                <p className="text-xs text-slate-500 dark:text-slate-400">Choose how to add the server</p>
+                            </div>
+                            <div className="flex gap-2">
+                                <button
+                                    type="button"
+                                    onClick={() => setServerConfigMode('auto')}
+                                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                                        serverConfigMode === 'auto'
+                                            ? 'bg-brand-600 text-white shadow-lg'
+                                            : 'bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-300 dark:hover:bg-slate-600'
+                                    }`}
+                                >
+                                    <Zap size={14} className="inline mr-1" /> Auto Config
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setServerConfigMode('manual')}
+                                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                                        serverConfigMode === 'manual'
+                                            ? 'bg-brand-600 text-white shadow-lg'
+                                            : 'bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-300 dark:hover:bg-slate-600'
+                                    }`}
+                                >
+                                    <SettingsIcon size={14} className="inline mr-1" /> Manual
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* Server IP and SSH User (Required for both modes) */}
+                        <div className="grid grid-cols-2 gap-4">
+                            <div>
+                                <Input 
+                                    label="Server IP Address (IPv4)" 
+                                    value={newServer.ipv4} 
+                                    onChange={e => setNewServer({ ...newServer, ipv4: e.target.value })} 
+                                    required 
+                                    placeholder="e.g. 46.62.201.216" 
+                                />
+                                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 ml-1">Public IPv4 address</p>
+                            </div>
+                            <div>
+                                <Input 
+                                    label="SSH User" 
+                                    value={newServer.sshUser} 
+                                    onChange={e => setNewServer({ ...newServer, sshUser: e.target.value })} 
+                                    placeholder="root" 
+                                />
+                                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 ml-1">SSH username (default: root)</p>
+                            </div>
+                        </div>
+
+                        {/* Auto Config Section */}
+                        {serverConfigMode === 'auto' && (
+                            <>
+                                <div className="bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-lg p-3">
+                                    <p className="text-sm font-semibold text-emerald-900 dark:text-emerald-200 mb-2 flex items-center">
+                                        <Zap size={16} className="mr-2" /> Auto-Configuration Mode
+                                    </p>
+                                    <p className="text-xs text-emerald-800 dark:text-emerald-300 mb-3">
+                                        The system will automatically detect the OS, check requirements, install missing software, configure WireGuard, and add the server.
+                                    </p>
+                                    <Button
+                                        type="button"
+                                        onClick={handleDetectServer}
+                                        isLoading={isDetectingOS}
+                                        disabled={!newServer.ipv4}
+                                        className="w-full bg-emerald-600 hover:bg-emerald-700"
+                                    >
+                                        {isDetectingOS ? 'Detecting...' : '🔍 Detect Server & Check Requirements'}
+                                    </Button>
+                                </div>
+
+                                {/* OS Detection Results */}
+                                {detectedOS && (
+                                    <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
+                                        <p className="text-xs font-semibold text-blue-900 dark:text-blue-200 mb-2">Detected Operating System:</p>
+                                        <div className="grid grid-cols-2 gap-2 text-xs">
+                                            <div><span className="text-slate-600 dark:text-slate-400">Type:</span> <span className="font-semibold text-slate-900 dark:text-white">{detectedOS.type}</span></div>
+                                            <div><span className="text-slate-600 dark:text-slate-400">Distribution:</span> <span className="font-semibold text-slate-900 dark:text-white">{detectedOS.distribution || 'N/A'}</span></div>
+                                            <div><span className="text-slate-600 dark:text-slate-400">Version:</span> <span className="font-semibold text-slate-900 dark:text-white">{detectedOS.version || 'N/A'}</span></div>
+                                            <div><span className="text-slate-600 dark:text-slate-400">Architecture:</span> <span className="font-semibold text-slate-900 dark:text-white">{detectedOS.architecture || 'N/A'}</span></div>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Requirements Check Results */}
+                                {serverRequirements && (
+                                    <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-3">
+                                        <p className="text-xs font-semibold text-amber-900 dark:text-amber-200 mb-2">Requirements Status:</p>
+                                        <div className="space-y-1 text-xs">
+                                            <div className="flex items-center justify-between">
+                                                <span className="text-slate-600 dark:text-slate-400">SSH:</span>
+                                                <Badge variant={serverRequirements.ssh ? 'success' : 'danger'}>{serverRequirements.services.ssh}</Badge>
+                                            </div>
+                                            <div className="flex items-center justify-between">
+                                                <span className="text-slate-600 dark:text-slate-400">WireGuard:</span>
+                                                <Badge variant={serverRequirements.wireguard ? 'success' : 'danger'}>{serverRequirements.services.wireguard}</Badge>
+                                            </div>
+                                            <div className="flex items-center justify-between">
+                                                <span className="text-slate-600 dark:text-slate-400">Firewall:</span>
+                                                <Badge variant={serverRequirements.firewall ? 'success' : 'danger'}>{serverRequirements.firewall ? 'Configured' : 'Not Configured'}</Badge>
+                                            </div>
+                                            {serverRequirements.missingPackages.length > 0 && (
+                                                <div className="mt-2 pt-2 border-t border-amber-300 dark:border-amber-700">
+                                                    <span className="text-amber-800 dark:text-amber-300">Missing Packages:</span>
+                                                    <span className="ml-2 font-semibold text-amber-900 dark:text-amber-200">{serverRequirements.missingPackages.join(', ')}</span>
+                                                    <p className="text-xs text-amber-700 dark:text-amber-400 mt-1">These will be installed automatically</p>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Auto Config Progress */}
+                                {autoConfigProgress.length > 0 && (
+                                    <div className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-3">
+                                        <p className="text-xs font-semibold text-slate-900 dark:text-white mb-2">Configuration Progress:</p>
+                                        <div className="space-y-1 max-h-32 overflow-y-auto">
+                                            {autoConfigProgress.map((step, idx) => (
+                                                <div key={idx} className="text-xs text-slate-600 dark:text-slate-400 flex items-center">
+                                                    <div className={`w-2 h-2 rounded-full mr-2 ${idx === autoConfigProgress.length - 1 ? 'bg-brand-500 animate-pulse' : 'bg-emerald-500'}`}></div>
+                                                    {step}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+                            </>
+                        )}
+
+                        {/* Manual Config Section */}
+                        {serverConfigMode === 'manual' && (
+                            <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3 text-xs text-blue-800 dark:text-blue-200">
+                                <p className="font-semibold mb-1">📋 Manual Configuration:</p>
+                                <ul className="list-disc list-inside space-y-1 ml-2">
+                                    <li>Server must have SSH access configured</li>
+                                    <li>WireGuard must be installed and running</li>
+                                    <li>The system will fetch the WireGuard public key via SSH</li>
+                                    <li>Ensure firewall allows port {newServer.wgPort || 51820}/UDP</li>
+                                </ul>
+                            </div>
+                        )}
+
+                        {/* Common Server Details */}
                         <div>
                             <Input 
                                 label="Server Name" 
@@ -636,29 +847,21 @@ export const AdminDashboard: React.FC = () => {
                                 <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 ml-1">2-letter ISO code</p>
                             </div>
                         </div>
-                        
+
                         <div>
                             <Input 
-                                label="Server IP Address (IPv4)" 
-                                value={newServer.ipv4} 
-                                onChange={e => setNewServer({ ...newServer, ipv4: e.target.value })} 
-                                required 
-                                placeholder="e.g. 46.62.201.216" 
+                                label="WireGuard Port" 
+                                type="number"
+                                value={newServer.wgPort} 
+                                onChange={e => setNewServer({ ...newServer, wgPort: parseInt(e.target.value) || 51820 })} 
+                                placeholder="51820" 
                             />
-                            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 ml-1">Public IPv4 address of your WireGuard server</p>
+                            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 ml-1">UDP port for WireGuard (default: 51820)</p>
                         </div>
                         
-                        <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3 text-xs text-blue-800 dark:text-blue-200">
-                            <p className="font-semibold mb-1">📋 Important Notes:</p>
-                            <ul className="list-disc list-inside space-y-1 ml-2">
-                                <li>The system will automatically fetch the WireGuard public key via SSH</li>
-                                <li>Make sure SSH access is configured before adding the server</li>
-                                <li>SSH user defaults to 'root' (can be changed later)</li>
-                                <li>Server must have WireGuard installed and running</li>
-                            </ul>
-                        </div>
-                        
-                        <Button type="submit" isLoading={isAddingServer} className="w-full">Add VPN Server</Button>
+                        <Button type="submit" isLoading={isAddingServer} className="w-full">
+                            {serverConfigMode === 'auto' ? '🚀 Auto-Configure & Add Server' : 'Add VPN Server'}
+                        </Button>
                     </form>
                 </Modal>
 
