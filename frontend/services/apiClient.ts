@@ -24,6 +24,14 @@ async function fetchWithFallback<T>(endpoint: string, options: RequestInit, mock
       // If dev, we might still want to fall back to mock to keep UI working
     }
 
+    // Handle 403 Forbidden (Admin access required)
+    if (res.status === 403) {
+      const errorText = await res.text();
+      console.error(`[API] 403 Forbidden for ${endpoint}:`, errorText);
+      window.dispatchEvent(new CustomEvent('auth:forbidden', { detail: { endpoint, message: errorText } }));
+      throw new Error('Access denied. Admin privileges required.');
+    }
+
     if (!res.ok) {
       if (env.PROD) throw new Error(`Request failed with status ${res.status}`);
       console.warn(`[API] Fallback for ${endpoint}`);
