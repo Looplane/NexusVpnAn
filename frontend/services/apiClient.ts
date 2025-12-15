@@ -59,6 +59,20 @@ export const apiClient = {
   // Node Provisioning & Control
   getServerSetupScript: async (id: string) => fetchWithFallback(`/admin/servers/${id}/setup-script`, { method: 'GET', headers: getHeaders() }, async () => ({ script: '# Mock Script\napt install wireguard' })),
   executeRemoteCommand: async (serverId: string, command: string) => fetchWithFallback(`/admin/servers/${serverId}/command`, { method: 'POST', headers: getHeaders(), body: JSON.stringify({ command }) }, async () => ({ output: `[MOCK OUTPUT] Executed: ${command}\nResult: Success (Simulated)` })),
+  
+  // Server Metrics & Monitoring
+  getServerMetrics: async (serverId: string) => fetchWithFallback(`/admin/servers/${serverId}/metrics`, { method: 'GET', headers: getHeaders() }, async () => ({ cpu: { usage: 28, cores: 8, frequency: '3.2GHz' }, ram: { used: 12, total: 16, usage: 12 }, load: { current: 51, avg1: 0.45, avg5: 0.32, avg15: 0.15 }, uptime: '14d 02h 12m', network: { inbound: 0, outbound: 0 } })),
+  getServerLogs: async (serverId: string, lines: number = 50) => fetchWithFallback(`/admin/servers/${serverId}/logs?lines=${lines}`, { method: 'GET', headers: getHeaders() }, async () => []),
+  
+  // Service Control
+  controlWireGuardService: async (serverId: string, action: 'start' | 'stop' | 'restart' | 'status') => fetchWithFallback(`/admin/servers/${serverId}/service/${action}`, { method: 'POST', headers: getHeaders() }, async () => ({ status: 'running', message: 'Service control simulated' })),
+  
+  // Firewall Management
+  getFirewallRules: async (serverId: string) => fetchWithFallback(`/admin/servers/${serverId}/firewall`, { method: 'GET', headers: getHeaders() }, async () => []),
+  
+  // WireGuard Configuration
+  getWireGuardConfig: async (serverId: string) => fetchWithFallback(`/admin/servers/${serverId}/config`, { method: 'GET', headers: getHeaders() }, async () => ({ wgPort: 51820, dns: '1.1.1.1, 8.8.8.8', mtu: '1420', allowedIps: '10.100.0.0/24', keepAlive: '25' })),
+  updateWireGuardConfig: async (serverId: string, config: any) => fetchWithFallback(`/admin/servers/${serverId}/config`, { method: 'PATCH', headers: getHeaders(), body: JSON.stringify(config) }, async () => ({ success: true, message: 'Configuration updated' })),
 
   getAllUsers: async () => fetchWithFallback('/admin/users', { method: 'GET', headers: getHeaders() }, () => mockApi.getAllUsers()),
   updateUser: async (id: string, data: any) => fetchWithFallback(`/admin/users/${id}`, { method: 'PATCH', headers: getHeaders(), body: JSON.stringify(data) }, () => mockApi.updateUser(id, data)),

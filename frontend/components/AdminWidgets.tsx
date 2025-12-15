@@ -254,17 +254,42 @@ export const RevenueChart: React.FC = () => {
     );
 };
 
-export const ServiceControls: React.FC = () => {
+export const ServiceControls: React.FC<{ serverId?: string }> = ({ serverId }) => {
     const [status, setStatus] = useState<'running' | 'stopped' | 'restarting'>('running');
+    const [loading, setLoading] = useState(false);
 
-    const handleAction = (action: 'start' | 'stop' | 'restart') => {
-        if (action === 'restart') {
-            setStatus('restarting');
-            setTimeout(() => setStatus('running'), 2000);
-        } else if (action === 'stop') {
-            setStatus('stopped');
-        } else {
-            setStatus('running');
+    useEffect(() => {
+        if (serverId) {
+            fetchStatus();
+        }
+    }, [serverId]);
+
+    const fetchStatus = async () => {
+        if (!serverId) return;
+        try {
+            const result = await apiClient.controlWireGuardService(serverId, 'status');
+            setStatus(result.status === 'running' ? 'running' : 'stopped');
+        } catch (error) {
+            console.error('Failed to fetch service status:', error);
+        }
+    };
+
+    const handleAction = async (action: 'start' | 'stop' | 'restart') => {
+        if (!serverId) return;
+        setLoading(true);
+        try {
+            if (action === 'restart') {
+                setStatus('restarting');
+            }
+            const result = await apiClient.controlWireGuardService(serverId, action);
+            setStatus(result.status === 'running' ? 'running' : 'stopped');
+            if (action === 'restart' && result.status === 'running') {
+                setTimeout(() => setStatus('running'), 2000);
+            }
+        } catch (error) {
+            console.error(`Failed to ${action} service:`, error);
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -278,13 +303,13 @@ export const ServiceControls: React.FC = () => {
             </div>
             
             <div className="grid grid-cols-3 gap-2">
-                <Button size="sm" variant="outline" onClick={() => handleAction('start')} disabled={status === 'running'} className="border-slate-200 dark:border-slate-700">
+                <Button size="sm" variant="outline" onClick={() => handleAction('start')} disabled={status === 'running' || loading} className="border-slate-200 dark:border-slate-700" isLoading={loading && status === 'stopped'}>
                     <Play size={14} className="mr-2" /> Start
                 </Button>
-                <Button size="sm" variant="outline" onClick={() => handleAction('restart')} disabled={status !== 'running'} className="border-slate-200 dark:border-slate-700">
+                <Button size="sm" variant="outline" onClick={() => handleAction('restart')} disabled={status !== 'running' || loading} className="border-slate-200 dark:border-slate-700" isLoading={loading && status === 'restarting'}>
                     <RefreshCw size={14} className="mr-2" /> Restart
                 </Button>
-                <Button size="sm" variant="danger" onClick={() => handleAction('stop')} disabled={status === 'stopped'}>
+                <Button size="sm" variant="danger" onClick={() => handleAction('stop')} disabled={status === 'stopped' || loading} isLoading={loading && status === 'stopped'}>
                     <StopCircle size={14} className="mr-2" /> Stop
                 </Button>
             </div>
@@ -292,19 +317,41 @@ export const ServiceControls: React.FC = () => {
     );
 };
 
-export const FirewallManager: React.FC = () => {
-    const [rules, setRules] = useState([
-        { id: 1, port: '22', proto: 'TCP', action: 'ALLOW', from: 'Anywhere', desc: 'SSH Access' },
-        { id: 2, port: '51820', proto: 'UDP', action: 'ALLOW', from: 'Anywhere', desc: 'WireGuard VPN' },
-        { id: 3, port: '80', proto: 'TCP', action: 'DENY', from: 'Anywhere', desc: 'HTTP Web' },
-    ]);
+export const FirewallManager: React.FC<{ serverId?: string }> = ({ serverId }) => {
+    const [rules, setRules] = useState<any[]>([]);
     const [newPort, setNewPort] = useState('');
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        if (serverId) {
+            fetchRules();
+        }
+    }, [serverId]);
+
+    const fetchRules = async () => {
+        if (!serverId) return;
+        setLoading(true);
+        try {
+            const data = await apiClient.getFirewallRules(serverId);
+            setRules(data || []);
+        } catch (error) {
+            console.error('Failed to fetch firewall rules:', error);
+            setRules([]);
+        } finally {
+            setLoading(false);
+        }
+    };
 
     const addRule = () => {
-        if (!newPort) return;
+        if (!newPort || !serverId) return;
+        // TODO: Implement API call to add firewall rule
         setRules([...rules, { id: Date.now(), port: newPort, proto: 'TCP', action: 'ALLOW', from: 'Anywhere', desc: 'Custom Rule' }]);
         setNewPort('');
     };
+
+    if (loading) {
+        return <div className="p-4 text-center text-slate-500">Loading firewall rules...</div>;
+    }
 
     return (
         <div className="space-y-4 h-full flex flex-col">
@@ -313,28 +360,32 @@ export const FirewallManager: React.FC = () => {
                 <Button onClick={addRule}><Plus size={16} /> Add</Button>
             </div>
             <div className="bg-slate-50 dark:bg-slate-950 rounded-lg border border-slate-200 dark:border-slate-800 overflow-hidden flex-1">
-                <table className="w-full text-left text-xs text-slate-600 dark:text-slate-400">
-                    <thead className="bg-slate-100 dark:bg-slate-900 text-slate-700 dark:text-slate-200">
-                        <tr><th className="p-3">Port/Proto</th><th className="p-3">Action</th><th className="p-3">From</th><th className="p-3">Note</th><th className="p-3 text-right"></th></tr>
-                    </thead>
-                    <tbody>
-                        {rules.map(r => (
-                            <tr key={r.id} className="border-t border-slate-200 dark:border-slate-800 hover:bg-white dark:hover:bg-slate-900/50">
-                                <td className="p-3 font-mono text-slate-800 dark:text-white">{r.port}/{r.proto}</td>
-                                <td className="p-3"><Badge variant={r.action === 'ALLOW' ? 'success' : 'danger'}>{r.action}</Badge></td>
-                                <td className="p-3">{r.from}</td>
-                                <td className="p-3 italic text-slate-500 dark:text-slate-600">{r.desc}</td>
-                                <td className="p-3 text-right"><button onClick={() => setRules(rules.filter(x => x.id !== r.id))} className="text-red-500 hover:text-red-600"><Trash2 size={14}/></button></td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
+                {rules.length === 0 ? (
+                    <div className="p-8 text-center text-slate-500">No firewall rules found</div>
+                ) : (
+                    <table className="w-full text-left text-xs text-slate-600 dark:text-slate-400">
+                        <thead className="bg-slate-100 dark:bg-slate-900 text-slate-700 dark:text-slate-200">
+                            <tr><th className="p-3">Port/Proto</th><th className="p-3">Action</th><th className="p-3">From</th><th className="p-3">Note</th><th className="p-3 text-right"></th></tr>
+                        </thead>
+                        <tbody>
+                            {rules.map((r, idx) => (
+                                <tr key={r.id || idx} className="border-t border-slate-200 dark:border-slate-800 hover:bg-white dark:hover:bg-slate-900/50">
+                                    <td className="p-3 font-mono text-slate-800 dark:text-white">{r.port}/{r.proto}</td>
+                                    <td className="p-3"><Badge variant={r.action === 'ALLOW' ? 'success' : 'danger'}>{r.action}</Badge></td>
+                                    <td className="p-3">{r.from}</td>
+                                    <td className="p-3 italic text-slate-500 dark:text-slate-600">{r.desc}</td>
+                                    <td className="p-3 text-right"><button onClick={() => setRules(rules.filter(x => (x.id || idx) !== (r.id || idx)))} className="text-red-500 hover:text-red-600"><Trash2 size={14}/></button></td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                )}
             </div>
         </div>
     );
 };
 
-export const ConfigEditor: React.FC = () => {
+export const ConfigEditor: React.FC<{ serverId?: string }> = ({ serverId }) => {
     const [config, setConfig] = useState({
         wgPort: '51820',
         dns: '1.1.1.1, 8.8.8.8',
@@ -342,9 +393,48 @@ export const ConfigEditor: React.FC = () => {
         allowedIps: '10.100.0.0/24',
         keepAlive: '25'
     });
-
     const [rawMode, setRawMode] = useState(false);
     const [rawConfig, setRawConfig] = useState(`[Interface]\nAddress = 10.100.0.1/24\nListenPort = 51820\nPrivateKey = <HIDDEN>\n...`);
+    const [loading, setLoading] = useState(true);
+    const [saving, setSaving] = useState(false);
+
+    useEffect(() => {
+        if (serverId) {
+            fetchConfig();
+        }
+    }, [serverId]);
+
+    const fetchConfig = async () => {
+        if (!serverId) return;
+        setLoading(true);
+        try {
+            const data = await apiClient.getWireGuardConfig(serverId);
+            setConfig({
+                wgPort: String(data.wgPort || 51820),
+                dns: data.dns || '1.1.1.1, 8.8.8.8',
+                mtu: String(data.mtu || 1420),
+                allowedIps: data.allowedIps || '10.100.0.0/24',
+                keepAlive: String(data.keepAlive || 25)
+            });
+        } catch (error) {
+            console.error('Failed to fetch config:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleSave = async () => {
+        if (!serverId) return;
+        setSaving(true);
+        try {
+            await apiClient.updateWireGuardConfig(serverId, config);
+            // Show success message
+        } catch (error) {
+            console.error('Failed to save config:', error);
+        } finally {
+            setSaving(false);
+        }
+    };
 
     return (
         <div className="space-y-4 h-full flex flex-col">
@@ -403,22 +493,36 @@ export const ConfigEditor: React.FC = () => {
                 </div>
             )}
             
-            <Button className="w-full"><Save size={16} className="mr-2" /> Apply Configuration</Button>
+            <Button className="w-full" onClick={handleSave} isLoading={saving} disabled={loading}><Save size={16} className="mr-2" /> Apply Configuration</Button>
         </div>
     );
 };
 
-export const LogsPanel: React.FC = () => {
+export const LogsPanel: React.FC<{ serverId?: string }> = ({ serverId }) => {
     const [filter, setFilter] = useState('');
-    const logs = [
-        { time: '10:42:05', level: 'INFO', sys: 'SYSTEM', msg: 'WireGuard Service Started successfully.' },
-        { time: '10:42:06', level: 'INFO', sys: 'KERNEL', msg: 'wg0: link becomes ready' },
-        { time: '10:45:12', level: 'INFO', sys: 'AUTH', msg: 'Accepted publickey for peer 8923... from 192.168.1.45:49201' },
-        { time: '10:46:00', level: 'DEBUG', sys: 'NET', msg: 'Sending keepalive packet to peer 8923...' },
-        { time: '10:52:30', level: 'WARN', sys: 'FIREWALL', msg: 'Dropped packet from unauthorized peer 10.0.0.23 on port 22' },
-        { time: '11:05:00', level: 'INFO', sys: 'AUTH', msg: 'Key rotation scheduled in 140s' },
-        { time: '11:10:22', level: 'ERROR', sys: 'SYSTEM', msg: 'High CPU load detected (92%)' },
-    ];
+    const [logs, setLogs] = useState<any[]>([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        if (serverId) {
+            fetchLogs();
+            const interval = setInterval(fetchLogs, 10000); // Refresh every 10 seconds
+            return () => clearInterval(interval);
+        }
+    }, [serverId]);
+
+    const fetchLogs = async () => {
+        if (!serverId) return;
+        try {
+            const data = await apiClient.getServerLogs(serverId, 50);
+            setLogs(data || []);
+        } catch (error) {
+            console.error('Failed to fetch logs:', error);
+            setLogs([]);
+        } finally {
+            setLoading(false);
+        }
+    };
 
     const getLevelColor = (level: string) => {
         if (level === 'INFO') return 'text-emerald-600 dark:text-emerald-400';
@@ -442,14 +546,20 @@ export const LogsPanel: React.FC = () => {
                 <Button size="sm" variant="outline" className="border-slate-200 dark:border-slate-700"><Download size={14} /></Button>
             </div>
             <div className="space-y-1 font-mono text-[10px] leading-relaxed bg-slate-50 dark:bg-slate-950 p-4 rounded-lg flex-1 overflow-y-auto border border-slate-200 dark:border-slate-800">
-                {logs.filter(l => l.msg.toLowerCase().includes(filter.toLowerCase()) || l.sys.toLowerCase().includes(filter.toLowerCase())).map((log, i) => (
+                {loading ? (
+                    <div className="text-center text-slate-500 py-8">Loading logs...</div>
+                ) : logs.filter(l => (l.msg || '').toLowerCase().includes(filter.toLowerCase()) || (l.sys || '').toLowerCase().includes(filter.toLowerCase())).length === 0 ? (
+                    <div className="text-center text-slate-500 py-8">No logs found</div>
+                ) : (
+                    logs.filter(l => (l.msg || '').toLowerCase().includes(filter.toLowerCase()) || (l.sys || '').toLowerCase().includes(filter.toLowerCase())).map((log, i) => (
                     <div key={i} className="flex space-x-3 border-b border-slate-200 dark:border-slate-900/50 pb-1 mb-1 last:border-0">
                         <span className="text-slate-500">{log.time}</span>
                         <span className={`font-bold w-12 ${getLevelColor(log.level)}`}>{log.level}</span>
                         <span className="text-brand-600 dark:text-brand-300 w-16">[{log.sys}]</span>
                         <span className="text-slate-700 dark:text-slate-300 flex-1">{log.msg}</span>
                     </div>
-                ))}
+                    ))
+                )}
             </div>
         </div>
     );

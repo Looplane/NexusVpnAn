@@ -49,10 +49,30 @@ export class SeedService implements OnApplicationBootstrap {
   }
 
   private async seedServers() {
-    const count = await this.serverRepo.count();
-    if (count > 0) return;
-
     this.logger.log('Seeding Servers...');
+    
+    // Check if Ubuntu deployment server exists
+    const ubuntuServer = await this.serverRepo.findOne({ where: { ipv4: '5.161.91.222' } });
+    if (!ubuntuServer) {
+      this.logger.log('Adding Ubuntu deployment server (5.161.91.222)...');
+      await this.serverRepo.save({
+        name: 'NexusVPN Main Server',
+        city: 'Ashburn',
+        country: 'United States',
+        countryCode: 'US',
+        ipv4: '5.161.91.222',
+        wgPort: 51820,
+        sshUser: 'root',
+        isPremium: false,
+        isActive: true,
+      });
+    }
+
+    // Only seed dummy servers if no servers exist
+    const count = await this.serverRepo.count();
+    if (count > 1) return; // More than just the Ubuntu server
+
+    this.logger.log('Seeding default servers...');
     await this.serverRepo.save([
       { name: 'US East Node', city: 'New York', country: 'United States', countryCode: 'US', ipv4: '192.168.100.1', isPremium: false },
       { name: 'US West Node', city: 'Los Angeles', country: 'United States', countryCode: 'US', ipv4: '192.168.100.2', isPremium: false },

@@ -2,7 +2,8 @@
 import React, { useEffect, useState } from 'react';
 import { apiClient } from '../services/apiClient';
 import { Card, Badge, Button, Input, Modal, SmartWindow, Tooltip } from '../components/UI';
-import { RemoteTerminal, MetricCard, ServiceControls, FirewallManager, ConfigEditor, LogsPanel, AnalyticsWidget, RevenueChart, UserDistributionChart, ServerLoadChart } from '../components/AdminWidgets';
+import { RemoteTerminal, ServiceControls, FirewallManager, ConfigEditor, LogsPanel, AnalyticsWidget, RevenueChart, UserDistributionChart, ServerLoadChart } from '../components/AdminWidgets';
+import { ServerDashboard } from '../components/ServerDashboard';
 import { Server, Users, Activity, ShieldAlert, Plus, Trash2, Edit2, Shield, Ban, FileText, Settings as SettingsIcon, ToggleLeft, ToggleRight, Search, Key, Globe, Database, Save, Tag, MoreHorizontal, Cpu, HardDrive, Wifi, Lock, Terminal, CreditCard, Mail, Sliders, AlertTriangle, Layers, Power, RefreshCw, BarChart, Zap, ShieldCheck, MapPin, Smartphone, TrendingUp, Users as UsersIcon, RefreshCcw, Download, Upload, Filter, CheckSquare, XSquare, ChevronRight, File, StopCircle, Copy, FileCode, AlertCircle, Fingerprint, Network } from 'lucide-react';
 import { useToast } from '../contexts';
 import { User, AuditLogEntry, SystemSetting, Coupon, Campaign } from '../types';
@@ -734,14 +735,9 @@ export const AdminDashboard: React.FC = () => {
                             </div>
                             <div className="flex-1 overflow-hidden flex flex-col">
                                 {inspectorTab === 'dashboard' && (
-                                    <div className="space-y-4 overflow-y-auto pr-2">
-                                        <div className="grid grid-cols-3 gap-3">
-                                            <MetricCard label="CPU" value={selectedServer.metrics?.cpu || 45} unit="%" icon={Cpu} color="text-brand-500" detail="8 Cores @ 3.2GHz" />
-                                            <MetricCard label="RAM" value={selectedServer.metrics?.ram || 60} unit="%" icon={HardDrive} color="text-indigo-500" detail="12/16 GB Used" />
-                                            <MetricCard label="Load" value={Math.floor(selectedServer.metrics?.network / 10) || 12} unit="%" icon={Activity} color="text-emerald-500" detail="LA: 0.45, 0.32, 0.15" />
-                                        </div>
-                                        <AnalyticsWidget />
-                                        <ServiceControls />
+                                    <div className="space-y-6 overflow-y-auto pr-2">
+                                        <ServerDashboard serverId={selectedServer.id} />
+                                        <ServiceControls serverId={selectedServer.id} />
                                     </div>
                                 )}
                                 {inspectorTab === 'terminal' && <RemoteTerminal serverName={selectedServer.name} ip={selectedServer.ipv4} serverId={selectedServer.id} />}
@@ -760,9 +756,9 @@ export const AdminDashboard: React.FC = () => {
                                         </div>
                                     </div>
                                 )}
-                                {inspectorTab === 'firewall' && <FirewallManager />}
-                                {inspectorTab === 'config' && <ConfigEditor />}
-                                {inspectorTab === 'logs' && <LogsPanel />}
+                                {inspectorTab === 'firewall' && <FirewallManager serverId={selectedServer.id} />}
+                                {inspectorTab === 'config' && <ConfigEditor serverId={selectedServer.id} />}
+                                {inspectorTab === 'logs' && <LogsPanel serverId={selectedServer.id} />}
                             </div>
                         </div>
                     )}

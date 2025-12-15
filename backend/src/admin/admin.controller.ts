@@ -55,6 +55,42 @@ export class AdminController {
       return { output };
   }
 
+  @Get('servers/:id/metrics')
+  @Roles(UserRole.ADMIN)
+  async getServerMetrics(@Param('id') id: string) {
+      return this.adminService.getServerMetrics(id);
+  }
+
+  @Get('servers/:id/logs')
+  @Roles(UserRole.ADMIN)
+  async getServerLogs(@Param('id') id: string, @Body('lines') lines?: number) {
+      return this.adminService.getServerLogs(id, lines || 50);
+  }
+
+  @Post('servers/:id/service/:action')
+  @Roles(UserRole.ADMIN)
+  async controlService(@Param('id') id: string, @Param('action') action: 'start' | 'stop' | 'restart' | 'status') {
+      return this.adminService.controlWireGuardService(id, action);
+  }
+
+  @Get('servers/:id/firewall')
+  @Roles(UserRole.ADMIN)
+  async getFirewallRules(@Param('id') id: string) {
+      return this.adminService.getFirewallRules(id);
+  }
+
+  @Get('servers/:id/config')
+  @Roles(UserRole.ADMIN)
+  async getWireGuardConfig(@Param('id') id: string) {
+      return this.adminService.getWireGuardConfig(id);
+  }
+
+  @Patch('servers/:id/config')
+  @Roles(UserRole.ADMIN)
+  async updateWireGuardConfig(@Param('id') id: string, @Body() config: any) {
+      return this.adminService.updateWireGuardConfig(id, config);
+  }
+
   // --- Users ---
 
   @Get('users')
