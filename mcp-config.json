@@ -1,0 +1,23 @@
+{
+  "servers": {
+    "supabase": {
+      "name": "Supabase MCP Server",
+      "description": "MCP server for Supabase database operations",
+      "command": "node",
+      "args": ["mcp-servers/supabase-mcp/dist/index.js"],
+      "env": {
+        "SUPABASE_URL": "https://xorjbccyuinebimlxblu.supabase.co",
+        "SUPABASE_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhvcmpiY2N5dWluZWJpbWx4Ymx1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU3MzU1NjksImV4cCI6MjA4MTMxMTU2OX0.nYPfU9o3uJ3r8lefPgQSb1Jg-y7A8bYJkTvXQ8ieCMM"
+      }
+    },
+    "render": {
+      "name": "Render MCP Server",
+      "description": "MCP server for Render service management",
+      "command": "node",
+      "args": ["mcp-servers/render-mcp/dist/index.js"],
+      "env": {
+        "RENDER_API_KEY": "your-render-api-key-here"
+      }
+    }
+  }
+}

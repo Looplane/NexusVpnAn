@@ -22,5 +22,18 @@ Historical records of actions, sessions, and decisions.
 *   `DEVELOPMENT_LOG.md`: Chronological record of file changes and features.
 *   `CHAT_SESSION_HISTORY.md`: **(Vital)** Refined log of user-agent discussions and prompt engineering.
 
+### [04-Guides](./04-Guides)
+Comprehensive deployment and setup guides.
+*   `THE_ULTIMATE_DEPLOYMENT_GUIDE.md`: Complete deployment walkthrough.
+
+### [05-MCP](./05-MCP)
+Model Context Protocol (MCP) server documentation and guides.
+*   `README.md`: Overview of MCP integration.
+*   `MCP_API_KEYS_GUIDE.md`: Detailed API key setup instructions.
+*   `MCP_QUICK_SETUP.md`: Fast-track MCP configuration guide.
+*   `MCP_INTEGRATION_GUIDE.md`: Complete MCP tool usage guide.
+*   `MCP_KEYS_ACTION_PLAN.md`: Step-by-step action checklist.
+*   `MCP_SETUP_COMPLETE.md`: Post-setup completion guide.
+
 ## 🤖 Governance
 This project is managed by the policies defined in `pages/My-AGENTS/`. Consult those files for operational rules.

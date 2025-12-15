@@ -1,0 +1,11 @@
+{
+  "scripts": {
+    "mcp:install": "chmod +x mcp-scripts/*.sh && ./mcp-scripts/install-mcp.sh",
+    "mcp:dev": "./mcp-scripts/dev-mcp.sh",
+    "mcp:stop": "./mcp-scripts/stop-dev.sh",
+    "mcp:test": "./mcp-scripts/test-mcp.sh",
+    "mcp:build:supabase": "cd mcp-servers/supabase-mcp && npm run build",
+    "mcp:build:render": "cd mcp-servers/render-mcp && npm run build",
+    "mcp:build:all": "npm run mcp:build:supabase && npm run mcp:build:render"
+  }
+}

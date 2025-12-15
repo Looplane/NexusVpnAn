@@ -61,11 +61,22 @@ See [`CLOUD_DEPLOYMENT.md`](./CLOUD_DEPLOYMENT.md) for production deployment to:
 - **Backend**: Render/Railway
 - **Frontend**: Vercel
 
+## 🤖 AI Agents & MCP Integration
+
+This project includes comprehensive AI agent configurations and Model Context Protocol (MCP) integration:
+
+- **AI Agents**: [`agents/`](./agents/) - Universal AI agent registry
+- **MCP Servers**: [`mcp-servers/`](./mcp-servers/) - Supabase & Render integration
+- **Agent Docs**: [`AI_AGENTS_README.md`](./AI_AGENTS_README.md) - Complete setup guide
+
+Compatible with: Cursor, Windsurf, VS Code, Trae, Google AI Studio, Anthropic Console, and more.
+
 ## 📚 Documentation
 
-- **Project Roadmap**: [`frontend/pages/My-AGENTS/ROADMAP.md`](./frontend/pages/My-AGENTS/ROADMAP.md)
-- **Current Phase**: [`frontend/pages/My-AGENTS/PHASES.md`](./frontend/pages/My-AGENTS/PHASES.md)
-- **Task List**: [`frontend/pages/My-AGENTS/TODO.md`](./frontend/pages/My-AGENTS/TODO.md)
+- **Project Roadmap**: [`agents/ROADMAP.md`](./agents/ROADMAP.md)
+- **Current Phase**: [`agents/PHASES.md`](./agents/PHASES.md)
+- **Task List**: [`agents/TODO.md`](./agents/TODO.md)
+- **Complete Docs**: [`--DOCUMENTATIONS--/`](./--DOCUMENTATIONS--/) - Full documentation suite
 
 ## 🛠️ Tech Stack
 
