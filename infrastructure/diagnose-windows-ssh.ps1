@@ -27,7 +27,7 @@ if (Test-Path $sshdConfig) {
     
     # Check AuthorizedKeysFile
     $authKeysLine = Select-String -Path $sshdConfig -Pattern "AuthorizedKeysFile" | Select-Object -First 1
-    if ($authKeysLine) {
+    if ($authKeysLine -and $authKeysLine.Line) {
         Write-Host "   ✅ AuthorizedKeysFile found: $($authKeysLine.Line.Trim())" -ForegroundColor Green
     } else {
         Write-Host "   ❌ AuthorizedKeysFile not found" -ForegroundColor Red
@@ -46,20 +46,30 @@ $adminKeys = "C:\ProgramData\ssh\administrators_authorized_keys"
 
 if (Test-Path $userKeys) {
     $userKeyContent = Get-Content $userKeys -Raw
-    $keyCount = ($userKeyContent -split "`n" | Where-Object { $_.Trim() -ne "" }).Count
-    Write-Host "   ✅ User authorized_keys exists: $userKeys" -ForegroundColor Green
-    Write-Host "      Keys found: $keyCount" -ForegroundColor White
-    Write-Host "      First 50 chars: $($userKeyContent.Substring(0, [Math]::Min(50, $userKeyContent.Length)))..." -ForegroundColor Gray
+    if ($userKeyContent) {
+        $keyCount = ($userKeyContent -split "`n" | Where-Object { $_.Trim() -ne "" }).Count
+        $preview = if ($userKeyContent.Length -gt 50) { $userKeyContent.Substring(0, 50) } else { $userKeyContent }
+        Write-Host "   ✅ User authorized_keys exists: $userKeys" -ForegroundColor Green
+        Write-Host "      Keys found: $keyCount" -ForegroundColor White
+        Write-Host "      First 50 chars: $preview..." -ForegroundColor Gray
+    } else {
+        Write-Host "   ⚠️  User authorized_keys exists but is EMPTY: $userKeys" -ForegroundColor Yellow
+    }
 } else {
     Write-Host "   ❌ User authorized_keys NOT FOUND: $userKeys" -ForegroundColor Red
 }
 
 if (Test-Path $adminKeys) {
     $adminKeyContent = Get-Content $adminKeys -Raw
-    $keyCount = ($adminKeyContent -split "`n" | Where-Object { $_.Trim() -ne "" }).Count
-    Write-Host "   ✅ Admin authorized_keys exists: $adminKeys" -ForegroundColor Green
-    Write-Host "      Keys found: $keyCount" -ForegroundColor White
-    Write-Host "      First 50 chars: $($adminKeyContent.Substring(0, [Math]::Min(50, $adminKeyContent.Length)))..." -ForegroundColor Gray
+    if ($adminKeyContent) {
+        $keyCount = ($adminKeyContent -split "`n" | Where-Object { $_.Trim() -ne "" }).Count
+        $preview = if ($adminKeyContent.Length -gt 50) { $adminKeyContent.Substring(0, 50) } else { $adminKeyContent }
+        Write-Host "   ✅ Admin authorized_keys exists: $adminKeys" -ForegroundColor Green
+        Write-Host "      Keys found: $keyCount" -ForegroundColor White
+        Write-Host "      First 50 chars: $preview..." -ForegroundColor Gray
+    } else {
+        Write-Host "   ⚠️  Admin authorized_keys exists but is EMPTY: $adminKeys" -ForegroundColor Yellow
+    }
 } else {
     Write-Host "   ❌ Admin authorized_keys NOT FOUND: $adminKeys" -ForegroundColor Red
 }
@@ -112,8 +122,9 @@ $sshLogs = Get-EventLog -LogName Application -Source OpenSSH* -Newest 5 -ErrorAc
 if ($sshLogs) {
     foreach ($log in $sshLogs) {
         $message = $log.Message
-        if ($message -match "key|auth|publickey") {
-            Write-Host "   $($log.TimeGenerated): $($message.Substring(0, [Math]::Min(100, $message.Length)))" -ForegroundColor Gray
+        if ($message -and $message -match "key|auth|publickey") {
+            $preview = if ($message.Length -gt 100) { $message.Substring(0, 100) } else { $message }
+            Write-Host "   $($log.TimeGenerated): $preview" -ForegroundColor Gray
         }
     }
 } else {
@@ -126,19 +137,26 @@ Write-Host ""
 Write-Host "6. Verifying key format..." -ForegroundColor Yellow
 if (Test-Path $userKeys) {
     $keys = Get-Content $userKeys
-    foreach ($key in $keys) {
-        $key = $key.Trim()
-        if ($key -ne "" -and $key -notmatch '^#') {
-            if ($key -match '^(ssh-rsa|ssh-ed25519|ecdsa-sha2)') {
-                Write-Host "   ✅ Valid key format: $($key.Substring(0, [Math]::Min(50, $key.Length)))..." -ForegroundColor Green
-            } else {
-                Write-Host "   ❌ Invalid key format: $($key.Substring(0, [Math]::Min(50, $key.Length)))..." -ForegroundColor Red
-            }
-            if ($key.Length -lt 100) {
-                Write-Host "   ⚠️  Key seems too short (might be incomplete)" -ForegroundColor Yellow
+    if ($keys) {
+        foreach ($key in $keys) {
+            $key = $key.Trim()
+            if ($key -ne "" -and $key -notmatch '^#') {
+                $preview = if ($key.Length -gt 50) { $key.Substring(0, 50) } else { $key }
+                if ($key -match '^(ssh-rsa|ssh-ed25519|ecdsa-sha2)') {
+                    Write-Host "   ✅ Valid key format: $preview..." -ForegroundColor Green
+                } else {
+                    Write-Host "   ❌ Invalid key format: $preview..." -ForegroundColor Red
+                }
+                if ($key.Length -lt 100) {
+                    Write-Host "   ⚠️  Key seems too short (may be incomplete)" -ForegroundColor Yellow
+                }
             }
         }
+    } else {
+        Write-Host "   ❌ No keys found in file" -ForegroundColor Red
     }
+} else {
+    Write-Host "   ❌ authorized_keys file not found" -ForegroundColor Red
 }
 
 Write-Host ""
