@@ -20,20 +20,7 @@ import { AuditModule } from './audit/audit.module';
 import { SupportModule } from './support/support.module';
 import { HealthModule } from './health/health.module';
 import { MarketingModule } from './marketing/marketing.module';
-
-import { User } from './users/entities/user.entity';
-import { VpnConfig } from './vpn/entities/vpn-config.entity';
-import { Server } from './locations/entities/server.entity';
-import { IpAssignment } from './vpn/entities/ip-assignment.entity';
-import { UsageRecord } from './usage/entities/usage.entity';
-import { AuditLog } from './audit/entities/audit-log.entity';
-import { SystemSetting } from './audit/entities/system-setting.entity';
-import { Ticket } from './support/entities/ticket.entity';
-import { TicketMessage } from './support/entities/ticket-message.entity';
-import { Notification } from './notifications/entities/notification.entity';
-import { Coupon } from './marketing/entities/coupon.entity';
-import { Session } from './auth/entities/session.entity';
-import { LoginHistory } from './auth/entities/login-history.entity';
+import { DatabaseConfigService } from './database/database-config.service';
 
 @Module({
   imports: [
@@ -45,42 +32,7 @@ import { LoginHistory } from './auth/entities/login-history.entity';
       limit: 100,
     }]),
     TypeOrmModule.forRootAsync({
-      useFactory: () => {
-        const isProduction = process.env.NODE_ENV === 'production';
-
-        // Support for DATABASE_URL (common in PaaS like Render/Heroku/Railway)
-        if (process.env.DATABASE_URL) {
-          return {
-            type: 'postgres',
-            url: process.env.DATABASE_URL,
-            entities: [User, VpnConfig, Server, IpAssignment, UsageRecord, AuditLog, SystemSetting, Ticket, TicketMessage, Notification, Coupon, Session, LoginHistory],
-            synchronize: true, // Note: In a real prod app, use migrations instead of sync
-            ssl: isProduction ? { rejectUnauthorized: false } : false, // Required for Supabase/Neon/Render
-            extra: {
-              // Supabase connection pooler compatibility
-              application_name: 'nexusvpn-api',
-              // IPv6 connectivity support for Render deployment
-              connectionTimeoutMillis: 30000,
-              idleTimeoutMillis: 30000,
-              max: 10, // Maximum number of clients in the pool
-              // Force IPv6 connection if available
-              family: 6,
-            },
-          };
-        }
-
-        return {
-          type: 'postgres',
-          host: process.env.DB_HOST || 'localhost',
-          port: parseInt(process.env.DB_PORT, 10) || 5432,
-          username: process.env.DB_USER || 'nexus',
-          password: process.env.DB_PASSWORD || 'secure_password_123',
-          database: process.env.DB_NAME || 'nexusvpn',
-          entities: [User, VpnConfig, Server, IpAssignment, UsageRecord, AuditLog, SystemSetting, Ticket, TicketMessage, Notification, Coupon, Session, LoginHistory],
-          synchronize: true,
-          ssl: isProduction && process.env.DB_SSL === 'true' ? { rejectUnauthorized: false } : false,
-        };
-      }
+      useClass: DatabaseConfigService,
     }),
     AuthModule,
     UsersModule,
