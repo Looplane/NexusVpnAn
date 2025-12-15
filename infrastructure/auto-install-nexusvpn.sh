@@ -299,17 +299,24 @@ EOF
 deploy_nexusvpn() {
     log "Deploying NexusVPN application..."
     
-    # Create deployment directory
-    mkdir -p ${DEPLOYMENT_DIR}
-    cd ${DEPLOYMENT_DIR}
-    
-    # Clone repository
-    if [ -d ".git" ]; then
-        info "Repository already exists, pulling latest changes..."
-        git pull origin ${GITHUB_BRANCH} > /dev/null 2>&1
+    # Check if we're already in the cloned repository
+    if [ -d "/tmp/nexusvpn/.git" ]; then
+        info "Using existing cloned repository at /tmp/nexusvpn..."
+        cp -r /tmp/nexusvpn ${DEPLOYMENT_DIR}
+        cd ${DEPLOYMENT_DIR}
     else
-        info "Cloning NexusVPN repository..."
-        git clone -b ${GITHUB_BRANCH} ${GITHUB_REPO} . > /dev/null 2>&1
+        # Create deployment directory
+        mkdir -p ${DEPLOYMENT_DIR}
+        cd ${DEPLOYMENT_DIR}
+        
+        # Clone repository
+        if [ -d ".git" ]; then
+            info "Repository already exists, pulling latest changes..."
+            git pull origin ${GITHUB_BRANCH} > /dev/null 2>&1
+        else
+            info "Cloning NexusVPN repository..."
+            git clone -b ${GITHUB_BRANCH} ${GITHUB_REPO} . > /dev/null 2>&1
+        fi
     fi
     
     # Install backend dependencies

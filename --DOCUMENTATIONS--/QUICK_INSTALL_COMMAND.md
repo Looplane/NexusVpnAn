@@ -1,14 +1,41 @@
 # 🚀 NexusVPN Single-Command Installation
 
+## ⚠️ IMPORTANT: Private Repository Setup
+
+Since your GitHub repository is **private**, you cannot use `raw.githubusercontent.com` directly. Use one of the methods below.
+
 ## 📋 For Fresh Ubuntu 24.04 Server
 
-### ⚡ Single Command (Copy & Paste)
+### ⚡ Method 1: Clone Repository (Recommended for Private Repos)
 
-Connect to your Ubuntu server via **PuTTY** or **SSH** and run:
+**Step 1: Install prerequisites**
+```bash
+apt update && apt install -y git curl wget
+```
+
+**Step 2: Clone your private repository**
+```bash
+# Option A: HTTPS (will prompt for username/password or token)
+git clone https://github.com/Looplane/NexusVpnAn.git /tmp/nexusvpn
+
+# Option B: SSH (if you have SSH keys configured)
+git clone git@github.com:Looplane/NexusVpnAn.git /tmp/nexusvpn
+```
+
+**Step 3: Run the installation script**
+```bash
+cd /tmp/nexusvpn
+chmod +x infrastructure/auto-install-nexusvpn.sh
+sudo ./infrastructure/auto-install-nexusvpn.sh
+```
+
+### ⚡ Method 2: One-Line Clone & Install
 
 ```bash
-curl -sSL https://raw.githubusercontent.com/Looplane/NexusVpnAn/main/infrastructure/auto-install-nexusvpn.sh | sudo bash
+apt update && apt install -y git && git clone https://github.com/Looplane/NexusVpnAn.git /tmp/nexusvpn && cd /tmp/nexusvpn && chmod +x infrastructure/auto-install-nexusvpn.sh && sudo ./infrastructure/auto-install-nexusvpn.sh
 ```
+
+**Note:** You'll be prompted for GitHub credentials (username + password/token)
 
 ---
 
@@ -71,11 +98,47 @@ The script will display:
 
 ## 🔧 Alternative Installation Methods
 
-### If `curl` doesn't work:
+### Method 3: Upload Script via SCP (From Windows)
+
+**From your Windows machine with PuTTY/SCP:**
+
+```powershell
+# Using PowerShell or Command Prompt
+scp infrastructure/auto-install-nexusvpn.sh root@YOUR_SERVER_IP:/tmp/
+
+# Then SSH to server and run:
+ssh root@YOUR_SERVER_IP
+chmod +x /tmp/auto-install-nexusvpn.sh
+sudo /tmp/auto-install-nexusvpn.sh
+```
+
+### Method 4: Create Script Manually on Server
+
+**Copy the script content and create it directly:**
+
 ```bash
-wget -O /tmp/auto-install.sh https://raw.githubusercontent.com/Looplane/NexusVpnAn/main/infrastructure/auto-install-nexusvpn.sh
-chmod +x /tmp/auto-install.sh
-sudo /tmp/auto-install.sh
+# Create the script file
+nano /tmp/auto-install-nexusvpn.sh
+
+# Paste the entire script content (see infrastructure/auto-install-nexusvpn.sh)
+# Press Ctrl+X, then Y, then Enter to save
+
+# Make it executable and run
+chmod +x /tmp/auto-install-nexusvpn.sh
+sudo /tmp/auto-install-nexusvpn.sh
+```
+
+### Method 5: Use GitHub Personal Access Token
+
+```bash
+# First, create a GitHub Personal Access Token with 'repo' scope
+# GitHub → Settings → Developer settings → Personal access tokens
+
+# Then use it:
+GITHUB_TOKEN="your_token_here"
+curl -H "Authorization: token $GITHUB_TOKEN" \
+  https://raw.githubusercontent.com/Looplane/NexusVpnAn/main/infrastructure/auto-install-nexusvpn.sh \
+  | sudo bash
 ```
 
 ### Manual Download:
