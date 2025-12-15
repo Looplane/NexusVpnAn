@@ -76,6 +76,14 @@ $authKeys = "$sshDir\authorized_keys"
 # Remove inheritance and set permissions
 icacls $sshDir /inheritance:r /grant:r "$env:USERNAME:(OI)(CI)F"
 icacls $authKeys /inheritance:r /grant:r "$env:USERNAME:(F)"
+
+
+# Alternative: use cmd.exe
+# If PowerShell still has issues, run the icacls commands in cmd.exe:
+cmd /c "icacls %USERPROFILE%\.ssh /inheritance:r /grant:r %USERNAME%:(OI)(CI)F"
+cmd /c "icacls %USERPROFILE%\.ssh\authorized_keys /inheritance:r /grant:r %USERNAME%:(F)"
+cmd /c "icacls C:\ProgramData\ssh\administrators_authorized_keys /inheritance:r /grant:r Administrators:(F)"
+
 ```
 
 5. **Also add to administrators_authorized_keys** (for OpenSSH Server):
@@ -89,7 +97,34 @@ Add-Content -Path $adminKeys -Value $key
 icacls $adminKeys /inheritance:r /grant:r "Administrators:(F)"
 ```
 
-6. **Ensure OpenSSH Server is running**:
+6. **Fix OpenSSH Server Configuration** (IMPORTANT):
+
+The `sshd_config` file needs to have `PubkeyAuthentication` enabled. Run this script:
+
+```powershell
+# Download and run the fix script
+# Or manually edit C:\ProgramData\ssh\sshd_config
+
+# Uncomment this line (remove the #):
+# PubkeyAuthentication yes
+
+# Update AuthorizedKeysFile to:
+AuthorizedKeysFile .ssh/authorized_keys __PROGRAMDATA__/ssh/administrators_authorized_keys
+```
+
+**Quick Fix Script:**
+
+```powershell
+# Run this to automatically fix the config
+$sshdConfig = "C:\ProgramData\ssh\sshd_config"
+$config = Get-Content $sshdConfig -Raw
+$config = $config -replace '#PubkeyAuthentication yes', 'PubkeyAuthentication yes'
+$config = $config -replace 'AuthorizedKeysFile\s+[^\r\n]+', 'AuthorizedKeysFile .ssh/authorized_keys __PROGRAMDATA__/ssh/administrators_authorized_keys'
+Set-Content -Path $sshdConfig -Value $config -NoNewline
+Restart-Service sshd
+```
+
+7. **Ensure OpenSSH Server is running**:
 
 ```powershell
 # Check if OpenSSH Server is installed
@@ -105,7 +140,7 @@ Start-Service sshd
 Set-Service -Name sshd -StartupType Automatic
 ```
 
-7. **Configure Windows Firewall**:
+8. **Configure Windows Firewall**:
 
 ```powershell
 New-NetFirewallRule -Name "OpenSSH-Server-In-TCP" -DisplayName "OpenSSH SSH Server (sshd)" -Enabled True -Direction Inbound -Protocol TCP -Action Allow -LocalPort 22
@@ -145,23 +180,49 @@ If it connects without asking for a password, you're all set!
 Get-Service sshd
 ```
 
-2. **Check Windows Firewall**:
+2. **VERIFY sshd_config is correct** (Most Common Issue):
+
+```powershell
+# Check if PubkeyAuthentication is enabled
+Select-String -Path "C:\ProgramData\ssh\sshd_config" -Pattern "PubkeyAuthentication"
+
+# Should show: PubkeyAuthentication yes (NOT #PubkeyAuthentication yes)
+```
+
+If it's commented out, run:
+
+```powershell
+$sshdConfig = "C:\ProgramData\ssh\sshd_config"
+$config = Get-Content $sshdConfig -Raw
+$config = $config -replace '#PubkeyAuthentication yes', 'PubkeyAuthentication yes'
+Set-Content -Path $sshdConfig -Value $config -NoNewline
+Restart-Service sshd
+```
+
+3. **Check Windows Firewall**:
 
 ```powershell
 Get-NetFirewallRule -DisplayName "*SSH*"
 ```
 
-3. **Check SSH logs**:
+4. **Check SSH logs**:
 
 ```powershell
 Get-EventLog -LogName Application -Source OpenSSH* -Newest 10
 ```
 
-4. **Verify key permissions**:
+5. **Verify key permissions**:
 
 ```powershell
 icacls "$env:USERPROFILE\.ssh\authorized_keys"
 icacls "C:\ProgramData\ssh\administrators_authorized_keys"
+```
+
+6. **Verify keys are in the correct format** (single line, no breaks):
+
+```powershell
+Get-Content "$env:USERPROFILE\.ssh\authorized_keys"
+Get-Content "C:\ProgramData\ssh\administrators_authorized_keys"
 ```
 
 ### Auto-Configuration Still Shows "unknown"
