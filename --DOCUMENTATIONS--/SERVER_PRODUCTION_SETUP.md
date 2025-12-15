@@ -158,7 +158,9 @@ chmod +x /tmp/create-prod.sh && /tmp/create-prod.sh
 
 ## Next Steps
 
-1. Add real VPN servers in admin panel
-2. Configure SSH access to VPN nodes
-3. Setup SSL certificates
+1. **Add real VPN servers in admin panel** - See [PRODUCTION_NEXT_STEPS.md](./PRODUCTION_NEXT_STEPS.md#-step-1-add-real-vpn-servers)
+2. **Configure SSH access to VPN nodes** - See [PRODUCTION_NEXT_STEPS.md](./PRODUCTION_NEXT_STEPS.md#-step-2-configure-ssh-access-to-vpn-nodes)
+3. **Setup SSL certificates** - See [PRODUCTION_NEXT_STEPS.md](./PRODUCTION_NEXT_STEPS.md#-step-3-setup-ssl-certificates-lets-encrypt)
+
+📖 **Full Next Steps Guide**: See [PRODUCTION_NEXT_STEPS.md](./PRODUCTION_NEXT_STEPS.md) for detailed instructions.
 
