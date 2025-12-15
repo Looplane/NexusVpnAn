@@ -37,3 +37,23 @@ mobile/*.log
 .env
 .env.*
 !.env.example
+
+# Server-specific files (should not be in git)
+infrastructure/setup-production.sh
+infrastructure/setup-production-simple.sh
+infrastructure/create-production-setup-on-server.sh
+backend/.env.production
+frontend/.env.production
+backend/ecosystem.config.js
+
+# SSH keys (server-specific)
+.ssh/
+*.pem
+*.key
+id_rsa
+id_rsa.pub
+
+# Server logs
+/var/log/nexusvpn/
+/tmp/frontend.log
+/tmp/backend.log
