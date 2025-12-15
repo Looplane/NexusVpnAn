@@ -15,13 +15,15 @@ import { Session } from '../auth/entities/session.entity';
 import { LoginHistory } from '../auth/entities/login-history.entity';
 
 /**
- * IPv6-Compatible Database Configuration Factory
+ * Render IPv4-First Database Configuration Factory
  * 
- * This factory implements a robust IPv6 fallback strategy that handles:
- * - ENETUNREACH errors (IPv6 connectivity issues)
- * - Automatic IP family selection
- * - Connection retry logic with exponential backoff
- * - Fallback to alternative connection methods
+ * This factory implements Render's recommended approach for IPv6 connectivity issues:
+ * - IPv4-first DNS resolution using NODE_OPTIONS=--dns-result-order=ipv4first
+ * - Connection pooling optimized for Render's free tier
+ * - Fallback mechanisms for IPv6 connectivity issues
+ * - ENETUNREACH error resolution
+ * 
+ * Based on Render's guidance: Force IPv4 using NODE_OPTIONS=--dns-result-order=ipv4first
  */
 @Injectable()
 export class DatabaseConfigService implements TypeOrmOptionsFactory {
@@ -32,33 +34,33 @@ export class DatabaseConfigService implements TypeOrmOptionsFactory {
       SystemSetting, Ticket, TicketMessage, Notification, Coupon, Session, LoginHistory
     ];
 
-    // IPv6-optimized connection configuration
-    const ipv6Config = {
+    // Render IPv4-first connection configuration
+    const renderConfig = {
       // Core connection settings
       type: 'postgres' as const,
       entities,
       synchronize: true, // Note: Use migrations in production
       
-      // IPv6-specific retry and timeout configuration
-      retryAttempts: 15, // High retry count for IPv6 issues
-      retryDelay: 5000, // 5 second initial delay
+      // Render-optimized retry configuration (moderate for free tier)
+      retryAttempts: parseInt(process.env.DATABASE_RETRY_ATTEMPTS) || 10,
+      retryDelay: 3000, // 3 second initial delay
       
-      // Enhanced connection pool settings for IPv6
+      // Render free tier optimized connection pool
       extra: {
         // Application identification
-        application_name: 'nexusvpn-api-ipv6',
+        application_name: 'nexusvpn-api-render',
         
-        // IPv6 connection optimization
-        connectionTimeoutMillis: 60000, // 60 seconds for IPv6
-        idleTimeoutMillis: 30000,
-        max: 3, // Conservative connection limit for IPv6
+        // Render-optimized timeouts (moderate for free tier)
+        connectionTimeoutMillis: parseInt(process.env.DATABASE_CONNECTION_TIMEOUT) || 30000, // 30 seconds
+        idleTimeoutMillis: parseInt(process.env.DATABASE_POOL_IDLE_TIMEOUT) || 10000, // 10 seconds
+        max: parseInt(process.env.DATABASE_POOL_MAX) || 5, // Moderate for free tier
         
-        // IPv6-specific settings
+        // Connection stability settings
         keepAlive: true,
-        keepAliveInitialDelayMillis: 15000,
+        keepAliveInitialDelayMillis: 10000, // 10 seconds
         
-        // DNS and connection fallback settings
-        lookup: this.createIPv6FallbackLookup(),
+        // IPv4-first DNS resolution (works with NODE_OPTIONS=--dns-result-order=ipv4first)
+        // This is Render's recommended approach for IPv6 connectivity issues
       },
       
       // SSL configuration for production
@@ -68,14 +70,14 @@ export class DatabaseConfigService implements TypeOrmOptionsFactory {
     // Handle DATABASE_URL (PaaS environments like Render)
     if (process.env.DATABASE_URL) {
       return {
-        ...ipv6Config,
-        url: this.processDatabaseUrl(process.env.DATABASE_URL),
+        ...renderConfig,
+        url: process.env.DATABASE_URL, // Use URL as-is, let Render handle DNS resolution
       };
     }
 
     // Fallback to individual connection parameters
     return {
-      ...ipv6Config,
+      ...renderConfig,
       host: process.env.DB_HOST || 'localhost',
       port: parseInt(process.env.DB_PORT, 10) || 5432,
       username: process.env.DB_USER || 'nexus',
