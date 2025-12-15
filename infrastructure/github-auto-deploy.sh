@@ -1,0 +1,122 @@
+#!/bin/bash
+# =============================================================================
+# 🔄 GitHub Auto-Deployment Script for NexusVPN
+# =============================================================================
+# This script automatically pulls latest changes from GitHub and redeploys
+# Can be triggered via:
+# 1. GitHub Webhook (recommended)
+# 2. Cron job (polling)
+# 3. Manual execution
+# =============================================================================
+
+set -e
+
+# Colors
+GREEN='\033[0;32m'
+RED='\033[0;31m'
+YELLOW='\033[1;33m'
+NC='\033[0m'
+
+# Configuration
+DEPLOYMENT_DIR="/opt/nexusvpn"
+GITHUB_REPO="https://github.com/Looplane/NexusVpnAn.git"
+GITHUB_BRANCH="main"
+LOG_FILE="/var/log/nexusvpn-deploy.log"
+
+# Logging function
+log() {
+    echo -e "${GREEN}[$(date '+%Y-%m-%d %H:%M:%S')] $1${NC}" | tee -a "$LOG_FILE"
+}
+
+error() {
+    echo -e "${RED}[$(date '+%Y-%m-%d %H:%M:%S')] ERROR: $1${NC}" | tee -a "$LOG_FILE"
+}
+
+info() {
+    echo -e "${YELLOW}[$(date '+%Y-%m-%d %H:%M:%S')] INFO: $1${NC}" | tee -a "$LOG_FILE"
+}
+
+# Create log file if it doesn't exist
+touch "$LOG_FILE"
+
+log "🚀 Starting auto-deployment..."
+
+# Check if deployment directory exists
+if [ ! -d "$DEPLOYMENT_DIR" ]; then
+    error "Deployment directory $DEPLOYMENT_DIR does not exist!"
+    exit 1
+fi
+
+cd "$DEPLOYMENT_DIR"
+
+# Check if it's a git repository
+if [ ! -d ".git" ]; then
+    error "Not a git repository. Cloning..."
+    rm -rf "$DEPLOYMENT_DIR"/*
+    git clone -b "$GITHUB_BRANCH" "$GITHUB_REPO" "$DEPLOYMENT_DIR"
+    cd "$DEPLOYMENT_DIR"
+else
+    # Fetch latest changes
+    info "Fetching latest changes from GitHub..."
+    git fetch origin "$GITHUB_BRANCH" || {
+        error "Failed to fetch from GitHub"
+        exit 1
+    }
+    
+    # Check if there are updates
+    LOCAL=$(git rev-parse HEAD)
+    REMOTE=$(git rev-parse origin/$GITHUB_BRANCH)
+    
+    if [ "$LOCAL" = "$REMOTE" ]; then
+        info "Already up to date. No deployment needed."
+        exit 0
+    fi
+    
+    info "New changes detected. Pulling latest code..."
+    git pull origin "$GITHUB_BRANCH" || {
+        error "Failed to pull from GitHub"
+        exit 1
+    }
+fi
+
+# Install/Update Backend Dependencies
+if [ -d "backend" ]; then
+    log "Installing backend dependencies..."
+    cd backend
+    npm ci --production || npm install --production
+    npm run build || {
+        error "Backend build failed!"
+        exit 1
+    }
+    cd ..
+fi
+
+# Install/Update Frontend Dependencies
+if [ -d "frontend" ]; then
+    log "Installing frontend dependencies..."
+    cd frontend
+    npm ci || npm install
+    cd ..
+fi
+
+# Restart Backend with PM2
+if command -v pm2 &> /dev/null; then
+    log "Restarting backend with PM2..."
+    cd "$DEPLOYMENT_DIR/backend"
+    pm2 restart nexusvpn-backend || pm2 start dist/main.js --name nexusvpn-backend
+    pm2 save
+fi
+
+# Restart Frontend
+log "Restarting frontend..."
+pkill -f "vite" || true
+sleep 2
+cd "$DEPLOYMENT_DIR/frontend"
+nohup npm run dev -- --host 0.0.0.0 --port 5173 > /tmp/frontend.log 2>&1 &
+
+log "✅ Deployment completed successfully!"
+log "Backend: http://5.161.91.222:3000"
+log "Frontend: http://5.161.91.222:5173"
+
+exit 0
+

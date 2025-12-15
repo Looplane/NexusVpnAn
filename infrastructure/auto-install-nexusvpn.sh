@@ -473,6 +473,9 @@ main() {
     deploy_nexusvpn
     create_scripts
     
+    # Setup production environment (optional)
+    info "Production setup available. Run: ${DEPLOYMENT_DIR}/infrastructure/setup-production.sh"
+    
     show_summary
     
     log "Installation completed successfully!"
@@ -480,6 +483,7 @@ main() {
     info "1. Review the configuration in ${DEPLOYMENT_DIR}/backend/.env"
     info "2. Run 'nexusvpn-start' to start the application"
     info "3. Access the frontend at http://$(hostname -I | awk '{print $1}'):5173"
+    info "4. Run production setup: ${DEPLOYMENT_DIR}/infrastructure/setup-production.sh"
 }
 
 # Run main function
