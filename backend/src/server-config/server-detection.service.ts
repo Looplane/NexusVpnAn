@@ -8,6 +8,38 @@ export interface OSInfo {
   architecture?: string; // 'x64', 'arm64', etc.
 }
 
+export interface ServerFingerprint {
+  hostname?: string;
+  cpu?: {
+    model?: string;
+    cores?: number;
+    threads?: number;
+    frequency?: string;
+  };
+  memory?: {
+    total?: number; // in MB
+    available?: number; // in MB
+  };
+  disk?: {
+    total?: number; // in GB
+    available?: number; // in GB
+  };
+  network?: {
+    interfaces?: Array<{ name: string; ip: string; mac?: string }>;
+    publicIP?: string;
+  };
+  timezone?: string;
+  uptime?: string;
+  kernel?: string;
+  wireguard?: {
+    installed: boolean;
+    configPath?: string;
+    publicKey?: string;
+    listenPort?: number;
+    interfaceIP?: string;
+  };
+}
+
 export interface ServerRequirements {
   ssh: boolean;
   wireguard: boolean;
@@ -381,6 +413,253 @@ export class ServerDetectionService {
     }
 
     return requirements;
+  }
+
+  /**
+   * Get comprehensive server fingerprint
+   */
+  async getServerFingerprint(ipv4: string, sshUser: string = 'root', password?: string): Promise<ServerFingerprint> {
+    const fingerprint: ServerFingerprint = {};
+    const osInfo = await this.detectOS(ipv4, sshUser, password);
+
+    try {
+      if (osInfo.type === 'windows') {
+        // Windows fingerprint
+        try {
+          fingerprint.hostname = await this.sshService.executeCommand(
+            'powershell -Command "$env:COMPUTERNAME"',
+            ipv4, sshUser, 3, password
+          ).catch(() => undefined);
+        } catch (e) {}
+
+        try {
+          const cpuInfo = await this.sshService.executeCommand(
+            'powershell -Command "$cpu = Get-WmiObject Win32_Processor; Write-Output \"$($cpu.Name) $($cpu.NumberOfCores) $($cpu.NumberOfLogicalProcessors) $($cpu.MaxClockSpeed)\""',
+            ipv4, sshUser, 3, password
+          );
+          const parts = cpuInfo.trim().split(/\s+/);
+          if (parts.length >= 4) {
+            fingerprint.cpu = {
+              model: parts.slice(0, -3).join(' '),
+              cores: parseInt(parts[parts.length - 3] || '4', 10),
+              threads: parseInt(parts[parts.length - 2] || '8', 10),
+              frequency: `${(parseInt(parts[parts.length - 1] || '3200', 10) / 1000).toFixed(1)}GHz`
+            };
+          }
+        } catch (e) {}
+
+        try {
+          const memInfo = await this.sshService.executeCommand(
+            'powershell -Command "$mem = Get-WmiObject Win32_ComputerSystem; $total = [math]::Round($mem.TotalPhysicalMemory / 1MB, 0); $free = [math]::Round((Get-WmiObject Win32_OperatingSystem).FreePhysicalMemory / 1MB, 0); Write-Output \"$total $free\""',
+            ipv4, sshUser, 3, password
+          );
+          const parts = memInfo.trim().split(/\s+/);
+          if (parts.length >= 2) {
+            fingerprint.memory = {
+              total: parseInt(parts[0] || '8192', 10),
+              available: parseInt(parts[1] || '4096', 10)
+            };
+          }
+        } catch (e) {}
+
+        try {
+          fingerprint.timezone = await this.sshService.executeCommand(
+            'powershell -Command "[System.TimeZoneInfo]::Local.Id"',
+            ipv4, sshUser, 3, password
+          ).catch(() => undefined);
+        } catch (e) {}
+
+        try {
+          const uptime = await this.sshService.executeCommand(
+            'powershell -Command "$os = Get-WmiObject Win32_OperatingSystem; $uptime = (Get-Date) - $os.ConvertToDateTime($os.LastBootUpTime); Write-Output \"$($uptime.Days)d $($uptime.Hours)h\""',
+            ipv4, sshUser, 3, password
+          );
+          fingerprint.uptime = uptime.trim();
+        } catch (e) {}
+
+        // Check WireGuard
+        try {
+          const wgPath = 'C:\\Program Files\\WireGuard\\Data\\Configurations\\wg0.conf';
+          const wgExists = await this.sshService.executeCommand(
+            `powershell -Command "Test-Path '${wgPath}'"`,
+            ipv4, sshUser, 3, password
+          );
+          if (wgExists && wgExists.trim().toLowerCase() === 'true') {
+            fingerprint.wireguard = { installed: true, configPath: wgPath };
+            try {
+              const wgConfig = await this.sshService.executeCommand(
+                `powershell -Command "Get-Content '${wgPath}'"`,
+                ipv4, sshUser, 3, password
+              );
+              const listenPortMatch = wgConfig.match(/ListenPort\s*=\s*(\d+)/i);
+              const addressMatch = wgConfig.match(/Address\s*=\s*([^\s]+)/i);
+              if (listenPortMatch) fingerprint.wireguard!.listenPort = parseInt(listenPortMatch[1], 10);
+              if (addressMatch) fingerprint.wireguard!.interfaceIP = addressMatch[1];
+            } catch (e) {}
+          } else {
+            fingerprint.wireguard = { installed: false };
+          }
+        } catch (e) {
+          fingerprint.wireguard = { installed: false };
+        }
+
+      } else if (osInfo.type === 'linux') {
+        // Linux fingerprint
+        try {
+          fingerprint.hostname = await this.sshService.executeCommand(
+            'hostname',
+            ipv4, sshUser, 3, password
+          ).catch(() => undefined);
+        } catch (e) {}
+
+        try {
+          const cpuInfo = await this.sshService.executeCommand(
+            'lscpu | grep -E "Model name|CPU\\(s\\)|Thread|MHz" | head -4',
+            ipv4, sshUser, 3, password
+          );
+          const modelMatch = cpuInfo.match(/Model name:\s*(.+)/);
+          const coresMatch = cpuInfo.match(/^CPU\\(s\\):\s*(\d+)/m);
+          const threadsMatch = cpuInfo.match(/Thread\\(s\\) per core:\s*(\d+)/);
+          const freqMatch = cpuInfo.match(/CPU MHz:\s*([\d.]+)/);
+          fingerprint.cpu = {
+            model: modelMatch ? modelMatch[1].trim() : undefined,
+            cores: coresMatch ? parseInt(coresMatch[1], 10) : undefined,
+            threads: coresMatch && threadsMatch ? parseInt(coresMatch[1], 10) * parseInt(threadsMatch[1], 10) : undefined,
+            frequency: freqMatch ? `${(parseFloat(freqMatch[1]) / 1000).toFixed(1)}GHz` : undefined
+          };
+        } catch (e) {}
+
+        try {
+          const memInfo = await this.sshService.executeCommand(
+            'free -m | grep Mem',
+            ipv4, sshUser, 3, password
+          );
+          const match = memInfo.match(/(\d+)\s+(\d+)\s+(\d+)/);
+          if (match) {
+            fingerprint.memory = {
+              total: parseInt(match[1], 10),
+              available: parseInt(match[3], 10)
+            };
+          }
+        } catch (e) {}
+
+        try {
+          const diskInfo = await this.sshService.executeCommand(
+            'df -BG / | tail -1 | awk \'{print $2, $4}\' | sed \'s/G//g\'',
+            ipv4, sshUser, 3, password
+          );
+          const parts = diskInfo.trim().split(/\s+/);
+          if (parts.length >= 2) {
+            fingerprint.disk = {
+              total: parseInt(parts[0] || '20', 10),
+              available: parseInt(parts[1] || '10', 10)
+            };
+          }
+        } catch (e) {}
+
+        try {
+          fingerprint.timezone = await this.sshService.executeCommand(
+            'timedatectl show -p Timezone --value 2>/dev/null || cat /etc/timezone 2>/dev/null || echo "UTC"',
+            ipv4, sshUser, 3, password
+          ).catch(() => 'UTC');
+        } catch (e) {}
+
+        try {
+          fingerprint.uptime = await this.sshService.executeCommand(
+            'uptime -p',
+            ipv4, sshUser, 3, password
+          ).catch(() => undefined);
+        } catch (e) {}
+
+        try {
+          fingerprint.kernel = await this.sshService.executeCommand(
+            'uname -r',
+            ipv4, sshUser, 3, password
+          ).catch(() => undefined);
+        } catch (e) {}
+
+        // Network interfaces
+        try {
+          const interfaces = await this.sshService.executeCommand(
+            'ip -4 addr show | grep -E "^[0-9]+:|inet " | grep -v "127.0.0.1" | head -6',
+            ipv4, sshUser, 3, password
+          );
+          const lines = interfaces.split('\n').filter(l => l.trim());
+          fingerprint.network = { interfaces: [] };
+          let currentInterface = '';
+          for (const line of lines) {
+            if (line.includes(':')) {
+              currentInterface = line.split(':')[1].trim();
+            } else if (line.includes('inet ')) {
+              const ipMatch = line.match(/inet\s+([^\s]+)/);
+              if (ipMatch && currentInterface) {
+                fingerprint.network!.interfaces!.push({ name: currentInterface, ip: ipMatch[1].split('/')[0] });
+              }
+            }
+          }
+        } catch (e) {}
+
+        // Check WireGuard
+        try {
+          const wgCheck = await this.sshService.executeCommand(
+            'which wg 2>/dev/null && echo "installed" || echo "not-installed"',
+            ipv4, sshUser, 3, password
+          );
+          if (wgCheck && wgCheck.includes('installed')) {
+            fingerprint.wireguard = { installed: true, configPath: '/etc/wireguard/wg0.conf' };
+            try {
+              const wgConfig = await this.sshService.executeCommand(
+                'sudo cat /etc/wireguard/wg0.conf 2>/dev/null || cat /etc/wireguard/wg0.conf 2>/dev/null || echo ""',
+                ipv4, sshUser, 3, password
+              );
+              if (wgConfig && !wgConfig.includes('No such file')) {
+                const listenPortMatch = wgConfig.match(/ListenPort\s*=\s*(\d+)/i);
+                const addressMatch = wgConfig.match(/Address\s*=\s*([^\s]+)/i);
+                const pubKeyMatch = wgConfig.match(/PublicKey\s*=\s*([^\s]+)/i);
+                if (listenPortMatch) fingerprint.wireguard!.listenPort = parseInt(listenPortMatch[1], 10);
+                if (addressMatch) fingerprint.wireguard!.interfaceIP = addressMatch[1];
+                if (pubKeyMatch) fingerprint.wireguard!.publicKey = pubKeyMatch[1];
+              }
+            } catch (e) {}
+          } else {
+            fingerprint.wireguard = { installed: false };
+          }
+        } catch (e) {
+          fingerprint.wireguard = { installed: false };
+        }
+      }
+    } catch (e) {
+      this.logger.error(`Failed to get server fingerprint: ${e.message}`);
+    }
+
+    return fingerprint;
+  }
+
+  /**
+   * Fetch WireGuard config from remote server
+   */
+  async fetchWireGuardConfig(ipv4: string, sshUser: string = 'root', password?: string): Promise<string | null> {
+    try {
+      const osInfo = await this.detectOS(ipv4, sshUser, password);
+      
+      if (osInfo.type === 'windows') {
+        const configPath = 'C:\\Program Files\\WireGuard\\Data\\Configurations\\wg0.conf';
+        const config = await this.sshService.executeCommand(
+          `powershell -Command "Get-Content '${configPath}'"`,
+          ipv4, sshUser, 3, password
+        ).catch(() => null);
+        return config;
+      } else {
+        const config = await this.sshService.executeCommand(
+          'sudo cat /etc/wireguard/wg0.conf 2>/dev/null || cat /etc/wireguard/wg0.conf 2>/dev/null || echo ""',
+          ipv4, sshUser, 3, password
+        ).catch(() => null);
+        return config && !config.includes('No such file') ? config : null;
+      }
+    } catch (e) {
+      this.logger.error(`Failed to fetch WireGuard config: ${e.message}`);
+      return null;
+    }
   }
 }
 

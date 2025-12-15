@@ -34,11 +34,14 @@ export const AdminDashboard: React.FC = () => {
 
     // Forms
     const [newServer, setNewServer] = useState({ name: '', city: '', country: '', countryCode: '', ipv4: '', sshUser: 'root', sshPassword: '', wgPort: 51820 });
-    const [serverConfigMode, setServerConfigMode] = useState<'auto' | 'manual'>('auto');
+    const [serverConfigMode, setServerConfigMode] = useState<'auto' | 'manual' | 'import'>('auto');
     const [autoConfigProgress, setAutoConfigProgress] = useState<string[]>([]);
     const [isDetectingOS, setIsDetectingOS] = useState(false);
     const [detectedOS, setDetectedOS] = useState<any>(null);
     const [serverRequirements, setServerRequirements] = useState<any>(null);
+    const [serverFingerprint, setServerFingerprint] = useState<any>(null);
+    const [importedConfig, setImportedConfig] = useState<string>('');
+    const [parsedConfig, setParsedConfig] = useState<any>(null);
     const [isAddingCoupon, setIsAddingCoupon] = useState(false);
     const [showCouponModal, setShowCouponModal] = useState(false);
     const [newCoupon, setNewCoupon] = useState({ code: '', discountPercent: 20, maxUses: 100, expiresAt: '' });
@@ -79,17 +82,135 @@ export const AdminDashboard: React.FC = () => {
         setIsDetectingOS(true);
         setAutoConfigProgress(['Connecting to server...']);
         try {
+            // Step 1: Detect OS
+            setAutoConfigProgress(prev => [...prev, 'Detecting operating system...']);
             const osInfo = await apiClient.detectServerOS(newServer.ipv4, newServer.sshUser, newServer.sshPassword);
             setDetectedOS(osInfo);
-            setAutoConfigProgress(prev => [...prev, `Detected: ${osInfo.type} ${osInfo.distribution || ''} ${osInfo.version || ''}`]);
+            setAutoConfigProgress(prev => [...prev, `✅ Detected: ${osInfo.type} ${osInfo.distribution || ''} ${osInfo.version || ''}`]);
             
+            // Step 2: Check requirements
+            setAutoConfigProgress(prev => [...prev, 'Checking server requirements...']);
             const requirements = await apiClient.checkServerRequirements(newServer.ipv4, newServer.sshUser, newServer.sshPassword);
             setServerRequirements(requirements);
-            setAutoConfigProgress(prev => [...prev, `Requirements checked. Missing: ${requirements.missingPackages.length} packages`]);
+            setAutoConfigProgress(prev => [...prev, `✅ Requirements checked. Missing: ${requirements.missingPackages.length} packages`]);
+            
+            // Step 3: Get comprehensive fingerprint
+            setAutoConfigProgress(prev => [...prev, 'Gathering server details...']);
+            const fingerprint = await apiClient.getServerFingerprint(newServer.ipv4, newServer.sshUser, newServer.sshPassword);
+            setServerFingerprint(fingerprint);
+            setAutoConfigProgress(prev => [...prev, '✅ Server fingerprint collected']);
+            
+            // Step 4: Try to fetch WireGuard config
+            if (fingerprint.wireguard?.installed) {
+                setAutoConfigProgress(prev => [...prev, 'Fetching WireGuard configuration...']);
+                const wgConfig = await apiClient.fetchWireGuardConfig(newServer.ipv4, newServer.sshUser, newServer.sshPassword);
+                if (wgConfig.success && wgConfig.config) {
+                    setAutoConfigProgress(prev => [...prev, '✅ WireGuard config fetched']);
+                    // Parse and auto-fill
+                    const parsed = await apiClient.parseWireGuardConfig(wgConfig.config);
+                    if (parsed.success && parsed.parsed) {
+                        setParsedConfig(parsed.parsed);
+                        // Auto-fill from parsed config
+                        if (parsed.parsed.listenPort) {
+                            setNewServer(prev => ({ ...prev, wgPort: parsed.parsed.listenPort }));
+                        }
+                    }
+                }
+            }
+            
+            // Auto-fill form fields based on detected information
+            autoFillFormFields(osInfo, fingerprint, requirements);
+            
+            addToast('success', 'Server detection completed! Form fields auto-filled.');
         } catch (e: any) {
             addToast('error', `Detection failed: ${e.message}`);
         } finally {
             setIsDetectingOS(false);
+        }
+    };
+
+    // Auto-fill form fields based on detected server information
+    const autoFillFormFields = (osInfo: any, fingerprint: any, requirements: any) => {
+        const updates: any = {};
+        
+        // Auto-fill server name from hostname (only if empty)
+        if (fingerprint?.hostname && !newServer.name.trim()) {
+            updates.name = fingerprint.hostname.replace(/\./g, '-').substring(0, 50);
+        }
+        
+        // Auto-fill WireGuard port from fingerprint or parsed config
+        if (fingerprint?.wireguard?.listenPort) {
+            updates.wgPort = fingerprint.wireguard.listenPort;
+        }
+        
+        // Try to infer location from hostname (if contains city/country codes)
+        if (fingerprint?.hostname) {
+            const hostname = fingerprint.hostname.toLowerCase();
+            // Common city patterns
+            const cityPatterns: { [key: string]: { city: string; country: string; code: string } } = {
+                'frankfurt': { city: 'Frankfurt', country: 'Germany', code: 'DE' },
+                'nuremberg': { city: 'Nuremberg', country: 'Germany', code: 'DE' },
+                'london': { city: 'London', country: 'United Kingdom', code: 'GB' },
+                'newyork': { city: 'New York', country: 'United States', code: 'US' },
+                'losangeles': { city: 'Los Angeles', country: 'United States', code: 'US' },
+                'tokyo': { city: 'Tokyo', country: 'Japan', code: 'JP' },
+                'singapore': { city: 'Singapore', country: 'Singapore', code: 'SG' },
+                'ashburn': { city: 'Ashburn', country: 'United States', code: 'US' },
+                'miami': { city: 'Miami', country: 'United States', code: 'US' },
+                'dallas': { city: 'Dallas', country: 'United States', code: 'US' },
+                'paris': { city: 'Paris', country: 'France', code: 'FR' },
+                'amsterdam': { city: 'Amsterdam', country: 'Netherlands', code: 'NL' },
+            };
+            
+            for (const [pattern, location] of Object.entries(cityPatterns)) {
+                if (hostname.includes(pattern)) {
+                    if (!newServer.city.trim()) updates.city = location.city;
+                    if (!newServer.country.trim()) updates.country = location.country;
+                    if (!newServer.countryCode.trim()) updates.countryCode = location.code;
+                    break;
+                }
+            }
+        }
+        
+        // Apply updates
+        if (Object.keys(updates).length > 0) {
+            setNewServer(prev => ({ ...prev, ...updates }));
+        }
+    };
+
+    // Handle config file import
+    const handleConfigImport = async (file: File) => {
+        try {
+            const text = await file.text();
+            setImportedConfig(text);
+            
+            // Parse the config
+            const parsed = await apiClient.parseWireGuardConfig(text);
+            if (parsed.success && parsed.parsed) {
+                setParsedConfig(parsed.parsed);
+                
+                // Auto-fill from parsed config
+                const updates: any = {};
+                if (parsed.parsed.endpointIP) {
+                    updates.ipv4 = parsed.parsed.endpointIP;
+                }
+                if (parsed.parsed.endpointPort) {
+                    updates.wgPort = parsed.parsed.endpointPort;
+                }
+                if (parsed.parsed.publicKey) {
+                    // Store public key for later use
+                }
+                
+                if (Object.keys(updates).length > 0) {
+                    setNewServer(prev => ({ ...prev, ...updates }));
+                }
+                
+                addToast('success', 'WireGuard config imported and parsed successfully!');
+            } else {
+                addToast('error', 'Failed to parse WireGuard config');
+            }
+        } catch (e: any) {
+            addToast('error', `Import failed: ${e.message}`);
         }
     };
 
@@ -653,7 +774,16 @@ export const AdminDashboard: React.FC = () => {
 
                 {/* --- MODALS --- */}
                 {/* ... (Modals remain unchanged) ... */}
-                <Modal isOpen={showServerModal} onClose={() => { setShowServerModal(false); setAutoConfigProgress([]); setDetectedOS(null); setServerRequirements(null); }} title="Add New VPN Server">
+                <Modal isOpen={showServerModal} onClose={() => { 
+                    setShowServerModal(false); 
+                    setAutoConfigProgress([]); 
+                    setDetectedOS(null); 
+                    setServerRequirements(null);
+                    setServerFingerprint(null);
+                    setImportedConfig('');
+                    setParsedConfig(null);
+                    setNewServer({ name: '', city: '', country: '', countryCode: '', ipv4: '', sshUser: 'root', sshPassword: '', wgPort: 51820 });
+                }} title="Add New VPN Server">
                     <form onSubmit={handleAddServer} className="space-y-4">
                         {/* Configuration Mode Toggle */}
                         <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800 rounded-lg">
@@ -661,28 +791,39 @@ export const AdminDashboard: React.FC = () => {
                                 <p className="text-sm font-semibold text-slate-900 dark:text-white">Configuration Mode</p>
                                 <p className="text-xs text-slate-500 dark:text-slate-400">Choose how to add the server</p>
                             </div>
-                            <div className="flex gap-2">
+                            <div className="flex gap-2 flex-wrap">
                                 <button
                                     type="button"
                                     onClick={() => setServerConfigMode('auto')}
-                                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                                    className={`px-3 py-2 rounded-lg text-xs font-medium transition-all ${
                                         serverConfigMode === 'auto'
                                             ? 'bg-brand-600 text-white shadow-lg'
                                             : 'bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-300 dark:hover:bg-slate-600'
                                     }`}
                                 >
-                                    <Zap size={14} className="inline mr-1" /> Auto Config
+                                    <Zap size={12} className="inline mr-1" /> Auto
                                 </button>
                                 <button
                                     type="button"
                                     onClick={() => setServerConfigMode('manual')}
-                                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                                    className={`px-3 py-2 rounded-lg text-xs font-medium transition-all ${
                                         serverConfigMode === 'manual'
                                             ? 'bg-brand-600 text-white shadow-lg'
                                             : 'bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-300 dark:hover:bg-slate-600'
                                     }`}
                                 >
-                                    <SettingsIcon size={14} className="inline mr-1" /> Manual
+                                    <SettingsIcon size={12} className="inline mr-1" /> Manual
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setServerConfigMode('import')}
+                                    className={`px-3 py-2 rounded-lg text-xs font-medium transition-all ${
+                                        serverConfigMode === 'import'
+                                            ? 'bg-brand-600 text-white shadow-lg'
+                                            : 'bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-300 dark:hover:bg-slate-600'
+                                    }`}
+                                >
+                                    <Upload size={12} className="inline mr-1" /> Import Config
                                 </button>
                             </div>
                         </div>
@@ -734,15 +875,49 @@ export const AdminDashboard: React.FC = () => {
                                     <p className="text-xs text-emerald-800 dark:text-emerald-300 mb-3">
                                         The system will automatically detect the OS, check requirements, install missing software, configure WireGuard, and add the server.
                                     </p>
-                                    <Button
-                                        type="button"
-                                        onClick={handleDetectServer}
-                                        isLoading={isDetectingOS}
-                                        disabled={!newServer.ipv4}
-                                        className="w-full bg-emerald-600 hover:bg-emerald-700"
-                                    >
-                                        {isDetectingOS ? 'Detecting...' : '🔍 Detect Server & Check Requirements'}
-                                    </Button>
+                                    <div className="space-y-2">
+                                        <Button
+                                            type="button"
+                                            onClick={handleDetectServer}
+                                            isLoading={isDetectingOS}
+                                            disabled={!newServer.ipv4}
+                                            className="w-full bg-emerald-600 hover:bg-emerald-700"
+                                        >
+                                            {isDetectingOS ? 'Detecting...' : '🔍 Detect Server & Check Requirements'}
+                                        </Button>
+                                        
+                                        {/* Fetch WireGuard Config Button (if already detected) */}
+                                        {detectedOS && !serverFingerprint?.wireguard?.installed && (
+                                            <Button
+                                                type="button"
+                                                onClick={async () => {
+                                                    try {
+                                                        addToast('info', 'Fetching WireGuard config...');
+                                                        const result = await apiClient.fetchWireGuardConfig(newServer.ipv4, newServer.sshUser, newServer.sshPassword);
+                                                        if (result.success && result.config) {
+                                                            setImportedConfig(result.config);
+                                                            const parsed = await apiClient.parseWireGuardConfig(result.config);
+                                                            if (parsed.success && parsed.parsed) {
+                                                                setParsedConfig(parsed.parsed);
+                                                                if (parsed.parsed.listenPort) {
+                                                                    setNewServer(prev => ({ ...prev, wgPort: parsed.parsed.listenPort }));
+                                                                }
+                                                            }
+                                                            addToast('success', 'WireGuard config fetched!');
+                                                        } else {
+                                                            addToast('warning', 'WireGuard config not found on server.');
+                                                        }
+                                                    } catch (e: any) {
+                                                        addToast('error', `Failed: ${e.message}`);
+                                                    }
+                                                }}
+                                                variant="outline"
+                                                className="w-full border-emerald-300 dark:border-emerald-700 text-emerald-700 dark:text-emerald-300"
+                                            >
+                                                <Download size={14} className="mr-2" /> Fetch WireGuard Config
+                                            </Button>
+                                        )}
+                                    </div>
                                 </div>
 
                                 {/* OS Detection Results */}
@@ -786,6 +961,154 @@ export const AdminDashboard: React.FC = () => {
                                     </div>
                                 )}
 
+                                {/* Apply Detected Values Button */}
+                                {serverFingerprint && (
+                                    <div className="bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-800 rounded-lg p-3">
+                                        <div className="flex items-center justify-between mb-2">
+                                            <p className="text-xs font-semibold text-indigo-900 dark:text-indigo-200 flex items-center">
+                                                <CheckSquare size={14} className="mr-2" /> Detected Values
+                                            </p>
+                                            <Button
+                                                type="button"
+                                                size="sm"
+                                                variant="outline"
+                                                onClick={() => {
+                                                    const updates: any = {};
+                                                    if (serverFingerprint.hostname) {
+                                                        updates.name = serverFingerprint.hostname.replace(/\./g, '-').substring(0, 50);
+                                                    }
+                                                    if (serverFingerprint.wireguard?.listenPort) {
+                                                        updates.wgPort = serverFingerprint.wireguard.listenPort;
+                                                    }
+                                                    if (Object.keys(updates).length > 0) {
+                                                        setNewServer(prev => ({ ...prev, ...updates }));
+                                                        addToast('success', 'Detected values applied to form!');
+                                                    }
+                                                }}
+                                                className="text-xs"
+                                            >
+                                                Apply to Form
+                                            </Button>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Server Fingerprint (Enhanced Details) */}
+                                {serverFingerprint && (
+                                    <div className="bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-lg p-3">
+                                        <p className="text-xs font-semibold text-purple-900 dark:text-purple-200 mb-2 flex items-center">
+                                            <Fingerprint size={14} className="mr-2" /> Server Fingerprint
+                                        </p>
+                                        <div className="space-y-2 text-xs">
+                                            {serverFingerprint.hostname && (
+                                                <div className="flex justify-between">
+                                                    <span className="text-slate-600 dark:text-slate-400">Hostname:</span>
+                                                    <span className="font-semibold text-slate-900 dark:text-white">{serverFingerprint.hostname}</span>
+                                                </div>
+                                            )}
+                                            {serverFingerprint.cpu && (
+                                                <div className="grid grid-cols-2 gap-2">
+                                                    {serverFingerprint.cpu.model && (
+                                                        <div className="col-span-2">
+                                                            <span className="text-slate-600 dark:text-slate-400">CPU:</span>
+                                                            <span className="ml-2 font-semibold text-slate-900 dark:text-white">{serverFingerprint.cpu.model}</span>
+                                                        </div>
+                                                    )}
+                                                    {serverFingerprint.cpu.cores && (
+                                                        <div>
+                                                            <span className="text-slate-600 dark:text-slate-400">Cores:</span>
+                                                            <span className="ml-2 font-semibold text-slate-900 dark:text-white">{serverFingerprint.cpu.cores}</span>
+                                                        </div>
+                                                    )}
+                                                    {serverFingerprint.cpu.frequency && (
+                                                        <div>
+                                                            <span className="text-slate-600 dark:text-slate-400">Frequency:</span>
+                                                            <span className="ml-2 font-semibold text-slate-900 dark:text-white">{serverFingerprint.cpu.frequency}</span>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            )}
+                                            {serverFingerprint.memory && (
+                                                <div className="grid grid-cols-2 gap-2">
+                                                    <div>
+                                                        <span className="text-slate-600 dark:text-slate-400">RAM Total:</span>
+                                                        <span className="ml-2 font-semibold text-slate-900 dark:text-white">{serverFingerprint.memory.total}MB</span>
+                                                    </div>
+                                                    <div>
+                                                        <span className="text-slate-600 dark:text-slate-400">RAM Available:</span>
+                                                        <span className="ml-2 font-semibold text-slate-900 dark:text-white">{serverFingerprint.memory.available}MB</span>
+                                                    </div>
+                                                </div>
+                                            )}
+                                            {serverFingerprint.disk && (
+                                                <div className="grid grid-cols-2 gap-2">
+                                                    <div>
+                                                        <span className="text-slate-600 dark:text-slate-400">Disk Total:</span>
+                                                        <span className="ml-2 font-semibold text-slate-900 dark:text-white">{serverFingerprint.disk.total}GB</span>
+                                                    </div>
+                                                    <div>
+                                                        <span className="text-slate-600 dark:text-slate-400">Disk Available:</span>
+                                                        <span className="ml-2 font-semibold text-slate-900 dark:text-white">{serverFingerprint.disk.available}GB</span>
+                                                    </div>
+                                                </div>
+                                            )}
+                                            {serverFingerprint.uptime && (
+                                                <div className="flex justify-between">
+                                                    <span className="text-slate-600 dark:text-slate-400">Uptime:</span>
+                                                    <span className="font-semibold text-slate-900 dark:text-white">{serverFingerprint.uptime}</span>
+                                                </div>
+                                            )}
+                                            {serverFingerprint.timezone && (
+                                                <div className="flex justify-between">
+                                                    <span className="text-slate-600 dark:text-slate-400">Timezone:</span>
+                                                    <span className="font-semibold text-slate-900 dark:text-white">{serverFingerprint.timezone}</span>
+                                                </div>
+                                            )}
+                                            {serverFingerprint.network && serverFingerprint.network.interfaces && serverFingerprint.network.interfaces.length > 0 && (
+                                                <div className="mt-2 pt-2 border-t border-purple-300 dark:border-purple-700">
+                                                    <p className="text-purple-800 dark:text-purple-300 mb-1 font-semibold">Network Interfaces:</p>
+                                                    {serverFingerprint.network.interfaces.map((iface: any, idx: number) => (
+                                                        <div key={idx} className="flex justify-between text-xs mb-1">
+                                                            <span className="text-slate-600 dark:text-slate-400">{iface.name}:</span>
+                                                            <span className="font-mono text-slate-900 dark:text-white">{iface.ip}</span>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            )}
+                                            {serverFingerprint.wireguard && (
+                                                <div className="mt-2 pt-2 border-t border-purple-300 dark:border-purple-700">
+                                                    <div className="flex justify-between mb-1">
+                                                        <span className="text-purple-800 dark:text-purple-300">WireGuard:</span>
+                                                        <Badge variant={serverFingerprint.wireguard.installed ? 'success' : 'danger'}>
+                                                            {serverFingerprint.wireguard.installed ? 'Installed' : 'Not Installed'}
+                                                        </Badge>
+                                                    </div>
+                                                    {serverFingerprint.wireguard.listenPort && (
+                                                        <div className="flex justify-between text-xs">
+                                                            <span className="text-slate-600 dark:text-slate-400">Listen Port:</span>
+                                                            <span className="font-semibold text-slate-900 dark:text-white">{serverFingerprint.wireguard.listenPort}</span>
+                                                        </div>
+                                                    )}
+                                                    {serverFingerprint.wireguard.interfaceIP && (
+                                                        <div className="flex justify-between text-xs">
+                                                            <span className="text-slate-600 dark:text-slate-400">Interface IP:</span>
+                                                            <span className="font-semibold text-slate-900 dark:text-white">{serverFingerprint.wireguard.interfaceIP}</span>
+                                                        </div>
+                                                    )}
+                                                    {serverFingerprint.wireguard.publicKey && (
+                                                        <div className="flex justify-between text-xs">
+                                                            <span className="text-slate-600 dark:text-slate-400">Public Key:</span>
+                                                            <span className="font-mono text-xs text-slate-900 dark:text-white truncate max-w-[150px]" title={serverFingerprint.wireguard.publicKey}>
+                                                                {serverFingerprint.wireguard.publicKey.substring(0, 20)}...
+                                                            </span>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                )}
+
                                 {/* Auto Config Progress */}
                                 {autoConfigProgress.length > 0 && (
                                     <div className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-3">
@@ -803,16 +1126,135 @@ export const AdminDashboard: React.FC = () => {
                             </>
                         )}
 
+                        {/* Import Config Section */}
+                        {serverConfigMode === 'import' && (
+                            <div className="bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-800 rounded-lg p-3 space-y-3">
+                                <p className="text-sm font-semibold text-indigo-900 dark:text-indigo-200 mb-2 flex items-center">
+                                    <Upload size={16} className="mr-2" /> Import WireGuard Configuration
+                                </p>
+                                <p className="text-xs text-indigo-800 dark:text-indigo-300 mb-3">
+                                    Upload a WireGuard config file (wg0.conf or client config) to auto-fill server information.
+                                </p>
+                                
+                                <div className="border-2 border-dashed border-indigo-300 dark:border-indigo-700 rounded-lg p-4 text-center">
+                                    <input
+                                        type="file"
+                                        accept=".conf,text/plain"
+                                        onChange={(e) => {
+                                            const file = e.target.files?.[0];
+                                            if (file) handleConfigImport(file);
+                                        }}
+                                        className="hidden"
+                                        id="wg-config-upload"
+                                    />
+                                    <label
+                                        htmlFor="wg-config-upload"
+                                        className="cursor-pointer flex flex-col items-center"
+                                    >
+                                        <Upload size={32} className="text-indigo-500 mb-2" />
+                                        <span className="text-sm font-medium text-indigo-700 dark:text-indigo-300">
+                                            Click to upload WireGuard config
+                                        </span>
+                                        <span className="text-xs text-indigo-600 dark:text-indigo-400 mt-1">
+                                            Supports .conf files
+                                        </span>
+                                    </label>
+                                </div>
+
+                                {importedConfig && (
+                                    <div className="bg-slate-50 dark:bg-slate-800 rounded-lg p-3">
+                                        <p className="text-xs font-semibold text-slate-900 dark:text-white mb-2">Imported Config:</p>
+                                        <pre className="text-xs bg-slate-900 text-slate-100 p-2 rounded overflow-x-auto max-h-40 overflow-y-auto">
+                                            {importedConfig.substring(0, 500)}{importedConfig.length > 500 ? '...' : ''}
+                                        </pre>
+                                    </div>
+                                )}
+
+                                {parsedConfig && (
+                                    <div className="bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-lg p-3">
+                                        <p className="text-xs font-semibold text-emerald-900 dark:text-emerald-200 mb-2">Parsed Information:</p>
+                                        <div className="space-y-1 text-xs">
+                                            {parsedConfig.endpointIP && (
+                                                <div className="flex justify-between">
+                                                    <span className="text-slate-600 dark:text-slate-400">Server IP:</span>
+                                                    <span className="font-semibold text-slate-900 dark:text-white">{parsedConfig.endpointIP}</span>
+                                                </div>
+                                            )}
+                                            {parsedConfig.endpointPort && (
+                                                <div className="flex justify-between">
+                                                    <span className="text-slate-600 dark:text-slate-400">WireGuard Port:</span>
+                                                    <span className="font-semibold text-slate-900 dark:text-white">{parsedConfig.endpointPort}</span>
+                                                </div>
+                                            )}
+                                            {parsedConfig.interfaceIP && (
+                                                <div className="flex justify-between">
+                                                    <span className="text-slate-600 dark:text-slate-400">Interface IP:</span>
+                                                    <span className="font-semibold text-slate-900 dark:text-white">{parsedConfig.interfaceIP}</span>
+                                                </div>
+                                            )}
+                                            {parsedConfig.publicKey && (
+                                                <div className="flex justify-between">
+                                                    <span className="text-slate-600 dark:text-slate-400">Public Key:</span>
+                                                    <span className="font-mono text-xs text-slate-900 dark:text-white truncate max-w-[200px]">{parsedConfig.publicKey}</span>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
                         {/* Manual Config Section */}
                         {serverConfigMode === 'manual' && (
-                            <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3 text-xs text-blue-800 dark:text-blue-200">
-                                <p className="font-semibold mb-1">📋 Manual Configuration:</p>
-                                <ul className="list-disc list-inside space-y-1 ml-2">
-                                    <li>Server must have SSH access configured</li>
-                                    <li>WireGuard must be installed and running</li>
-                                    <li>The system will fetch the WireGuard public key via SSH</li>
-                                    <li>Ensure firewall allows port {newServer.wgPort || 51820}/UDP</li>
-                                </ul>
+                            <div className="space-y-3">
+                                <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3 text-xs text-blue-800 dark:text-blue-200">
+                                    <p className="font-semibold mb-1">📋 Manual Configuration:</p>
+                                    <ul className="list-disc list-inside space-y-1 ml-2">
+                                        <li>Server must have SSH access configured</li>
+                                        <li>WireGuard must be installed and running</li>
+                                        <li>The system will fetch the WireGuard public key via SSH</li>
+                                        <li>Ensure firewall allows port {newServer.wgPort || 51820}/UDP</li>
+                                    </ul>
+                                </div>
+                                
+                                {/* Fetch WireGuard Config Button */}
+                                <Button
+                                    type="button"
+                                    onClick={async () => {
+                                        if (!newServer.ipv4) {
+                                            addToast('error', 'Please enter server IP address first');
+                                            return;
+                                        }
+                                        try {
+                                            addToast('info', 'Fetching WireGuard config from server...');
+                                            const result = await apiClient.fetchWireGuardConfig(newServer.ipv4, newServer.sshUser, newServer.sshPassword);
+                                            if (result.success && result.config) {
+                                                setImportedConfig(result.config);
+                                                const parsed = await apiClient.parseWireGuardConfig(result.config);
+                                                if (parsed.success && parsed.parsed) {
+                                                    setParsedConfig(parsed.parsed);
+                                                    // Auto-fill from fetched config
+                                                    const updates: any = {};
+                                                    if (parsed.parsed.endpointIP) updates.ipv4 = parsed.parsed.endpointIP;
+                                                    if (parsed.parsed.endpointPort) updates.wgPort = parsed.parsed.endpointPort;
+                                                    if (parsed.parsed.listenPort) updates.wgPort = parsed.parsed.listenPort;
+                                                    if (Object.keys(updates).length > 0) {
+                                                        setNewServer(prev => ({ ...prev, ...updates }));
+                                                    }
+                                                }
+                                                addToast('success', 'WireGuard config fetched and parsed successfully!');
+                                            } else {
+                                                addToast('warning', 'WireGuard config not found on server. It may not be installed yet.');
+                                            }
+                                        } catch (e: any) {
+                                            addToast('error', `Failed to fetch config: ${e.message}`);
+                                        }
+                                    }}
+                                    variant="outline"
+                                    className="w-full"
+                                >
+                                    <Download size={14} className="mr-2" /> Fetch WireGuard Config from Server
+                                </Button>
                             </div>
                         )}
 
@@ -864,8 +1306,13 @@ export const AdminDashboard: React.FC = () => {
                         </div>
 
                         <div>
+                            <div className="flex items-center justify-between mb-1">
+                                <label className="text-sm font-medium text-slate-700 dark:text-slate-300">WireGuard Port</label>
+                                {(serverFingerprint?.wireguard?.listenPort === newServer.wgPort || parsedConfig?.listenPort === newServer.wgPort || parsedConfig?.endpointPort === newServer.wgPort) && (
+                                    <Badge variant="success" className="text-xs">Auto-filled</Badge>
+                                )}
+                            </div>
                             <Input 
-                                label="WireGuard Port" 
                                 type="number"
                                 value={newServer.wgPort} 
                                 onChange={e => setNewServer({ ...newServer, wgPort: parseInt(e.target.value) || 51820 })} 
