@@ -1,0 +1,129 @@
+# 🔧 Fix Outdated UI on Server
+
+## Problem
+Server shows old UI tabs:
+- ❌ "Overview" instead of "Dashboard"
+- ❌ "Nodes" instead of "VPN Servers"
+- ❌ "Configuration" instead of "Settings"
+
+Local development shows correct UI, but server doesn't.
+
+## Cause
+Server code is outdated - hasn't pulled latest changes from GitHub.
+
+## Solution
+
+### Step 1: Run Update Script on Server
+
+SSH into your server and run:
+
+```bash
+cd /opt/nexusvpn
+chmod +x infrastructure/force-update-from-github.sh
+./infrastructure/force-update-from-github.sh
+```
+
+This will:
+- ✅ Pull latest code from GitHub
+- ✅ Rebuild backend
+- ✅ Reinstall frontend dependencies
+- ✅ Restart all services
+
+### Step 2: Clear Browser Cache
+
+After update, **clear your browser cache**:
+- **Chrome/Edge**: `Ctrl+Shift+R` (Windows) or `Cmd+Shift+R` (Mac)
+- **Firefox**: `Ctrl+F5` or `Ctrl+Shift+R`
+
+### Step 3: Verify
+
+1. Go to: `http://5.161.91.222:5173/#/admin`
+2. You should see:
+   - ✅ **Dashboard** (not Overview)
+   - ✅ **VPN Servers** (not Nodes)
+   - ✅ **Settings** (not Configuration)
+
+---
+
+## Manual Update (if script fails)
+
+If the script doesn't work, run these commands manually:
+
+```bash
+cd /opt/nexusvpn
+
+# Pull latest code
+git fetch origin main
+git reset --hard origin/main
+
+# Update backend
+cd backend
+rm -rf node_modules
+npm install --production
+npm run build
+cd ..
+
+# Update frontend
+cd frontend
+rm -rf node_modules .vite
+npm install
+cd ..
+
+# Restart services
+pm2 restart nexusvpn-backend
+pkill -f vite
+cd frontend
+nohup npm run dev -- --host 0.0.0.0 --port 5173 > /tmp/frontend.log 2>&1 &
+```
+
+---
+
+## Troubleshooting
+
+### Issue: "Failed to fetch from GitHub"
+
+**Solution**: Check GitHub authentication:
+
+```bash
+cd /opt/nexusvpn
+git remote -v
+```
+
+If it shows HTTPS, you may need a Personal Access Token. See: `--DOCUMENTATIONS--/INSTALL_FOR_PRIVATE_REPO.md`
+
+### Issue: "npm install failed"
+
+**Solution**: Check disk space and permissions:
+
+```bash
+df -h
+ls -la /opt/nexusvpn
+```
+
+### Issue: Frontend still shows old UI
+
+**Solution**: 
+1. Hard refresh browser: `Ctrl+Shift+R`
+2. Check frontend is running: `netstat -tlnp | grep 5173`
+3. Check frontend logs: `tail -f /tmp/frontend.log`
+
+---
+
+## Auto-Update Setup (Optional)
+
+To automatically update on every GitHub push, set up a cron job:
+
+```bash
+# Edit crontab
+crontab -e
+
+# Add this line (checks every 5 minutes):
+*/5 * * * * /opt/nexusvpn/infrastructure/github-auto-deploy.sh >> /var/log/nexusvpn-deploy.log 2>&1
+```
+
+Or use GitHub Webhooks for instant updates (see `--DOCUMENTATIONS--/PRODUCTION_DEPLOYMENT.md`).
+
+---
+
+**After running the update script, your server UI should match your local development!** 🎉
+
