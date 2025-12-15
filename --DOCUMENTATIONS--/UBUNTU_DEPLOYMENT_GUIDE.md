@@ -16,21 +16,38 @@ This guide will help you deploy a complete development environment on your Hetzn
 
 ## 🚀 Quick Start
 
-### Option 1: Automated Deployment (Recommended)
-1. **Connect to your server**:
-   ```bash
-   ssh root@5.161.91.222
-   # Password: #HaseebChaChu02110@
-   ```
+### Option 1: Single-Command Auto-Install (Recommended) ⚡
 
-2. **Download and run the setup script**:
-   ```bash
-   wget -O setup.sh https://raw.githubusercontent.com/your-repo/ubuntu-dev-environment-setup.sh
-   chmod +x setup.sh
-   sudo ./setup.sh
-   ```
+**Connect to your server via PuTTY/SSH and run this single command:**
 
-3. **Wait for completion** (15-30 minutes)
+```bash
+curl -sSL https://raw.githubusercontent.com/Looplane/NexusVpnAn/main/infrastructure/auto-install-nexusvpn.sh | sudo bash
+```
+
+**That's it!** The script will automatically:
+- ✅ Update Ubuntu 24.04 system
+- ✅ Install PostgreSQL 16 database
+- ✅ Install Node.js 20.x and PM2
+- ✅ Install Docker & Docker Compose
+- ✅ Install Nginx web server
+- ✅ Install and configure WireGuard VPN
+- ✅ Configure firewall (UFW)
+- ✅ Set up security (Fail2ban)
+- ✅ Clone NexusVPN from GitHub
+- ✅ Install all dependencies
+- ✅ Configure environment variables
+- ✅ Create management scripts
+
+**Installation Time:** 10-20 minutes (depending on server speed)
+
+**After installation, you'll see:**
+- Database credentials (PostgreSQL)
+- WireGuard public key
+- Service status
+- Management commands
+
+### Option 2: Manual Step-by-Step Setup
+Use the individual agent scripts in the `agents` directory for custom deployment.
 
 ### Option 2: Manual Step-by-Step Setup
 Use the individual agent scripts in the `agents` directory for custom deployment.
@@ -72,12 +89,17 @@ Update your system packages:
 apt update && apt upgrade -y
 ```
 
-### Step 3: Run Setup Script
-Execute the comprehensive setup script:
+### Step 3: Run Auto-Install Script
+Execute the single-command installation:
 ```bash
-wget -O setup.sh https://raw.githubusercontent.com/your-repo/ubuntu-dev-environment-setup.sh
-chmod +x setup.sh
-sudo ./setup.sh
+curl -sSL https://raw.githubusercontent.com/Looplane/NexusVpnAn/main/infrastructure/auto-install-nexusvpn.sh | sudo bash
+```
+
+**Alternative (if curl fails):**
+```bash
+wget -O /tmp/auto-install.sh https://raw.githubusercontent.com/Looplane/NexusVpnAn/main/infrastructure/auto-install-nexusvpn.sh
+chmod +x /tmp/auto-install.sh
+sudo /tmp/auto-install.sh
 ```
 
 ### Step 4: Configure Web Panels
