@@ -72,11 +72,30 @@ else
         exit 0
     fi
     
-    info "New changes detected. Pulling latest code..."
+    info "New changes detected. Preparing to pull latest code..."
+    
+    # Handle local changes and conflicts gracefully
+    # Stash local changes to server-specific files
+    info "Stashing local server-specific changes..."
+    git stash push -m "Server-specific changes $(date +%Y%m%d-%H%M%S)" || true
+    
+    # Remove untracked files that might conflict (server-specific configs)
+    info "Cleaning up server-specific untracked files..."
+    git clean -fd infrastructure/ || true
+    
+    # Pull latest code
+    info "Pulling latest code from GitHub..."
     git pull origin "$GITHUB_BRANCH" || {
-        error "Failed to pull from GitHub"
-        exit 1
+        error "Failed to pull from GitHub. Attempting reset..."
+        # If pull fails, reset to remote (discard local changes)
+        git fetch origin "$GITHUB_BRANCH"
+        git reset --hard origin/"$GITHUB_BRANCH" || {
+            error "Failed to reset to remote branch"
+            exit 1
+        }
     }
+    
+    info "Successfully updated code from GitHub"
 fi
 
 # Install/Update Backend Dependencies
