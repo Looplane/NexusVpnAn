@@ -4,10 +4,12 @@ services:
     env: node
     plan: free
     buildCommand: cd backend && npm install && npm run build
-    startCommand: cd backend && node dist/main
+    startCommand: cd backend && npm run start:prod
     envVars:
       - key: NODE_ENV
         value: production
+      - key: PORT
+        value: 10000 # Render uses PORT env var, defaults to 10000
       - key: DATABASE_URL
         fromDatabase:
           name: nexusvpn-db
@@ -15,7 +17,15 @@ services:
       - key: JWT_SECRET
         generateValue: true
       - key: MOCK_SSH
-        value: true # Set to false if you add real SSH keys
+        value: "true" # Set to false if you add real SSH keys
+      - key: FRONTEND_URL
+        value: https://nexusvpn.vercel.app # Update with your actual Vercel URL
+      - key: CORS_ORIGIN
+        value: https://nexusvpn.vercel.app # Update with your actual Vercel URL
+      - key: STRIPE_SECRET_KEY
+        sync: false # Set manually in Render dashboard for production
+      - key: STRIPE_WEBHOOK_SECRET
+        sync: false # Set manually in Render dashboard for production
 
 databases:
   - name: nexusvpn-db

@@ -85,6 +85,11 @@ export const apiClient = {
   
   // Firewall Management
   getFirewallRules: async (serverId: string) => fetchWithFallback(`/admin/servers/${serverId}/firewall`, { method: 'GET', headers: getHeaders() }, async () => []),
+  addFirewallRule: async (serverId: string, port: string, protocol?: string, description?: string) => fetchWithFallback(`/admin/servers/${serverId}/firewall`, { method: 'POST', headers: getHeaders(), body: JSON.stringify({ port, protocol, description }) }, async () => ({ success: true, message: 'Rule added (simulated)' })),
+  deleteFirewallRule: async (serverId: string, ruleId: string, port?: string, protocol?: string) => {
+    const queryParams = port && protocol ? `?port=${port}&protocol=${protocol}` : '';
+    return fetchWithFallback(`/admin/servers/${serverId}/firewall/${ruleId}${queryParams}`, { method: 'DELETE', headers: getHeaders() }, async () => ({ success: true, message: 'Rule deleted (simulated)' }));
+  },
   
   // WireGuard Configuration
   getWireGuardConfig: async (serverId: string) => fetchWithFallback(`/admin/servers/${serverId}/config`, { method: 'GET', headers: getHeaders() }, async () => ({ wgPort: 51820, dns: '1.1.1.1, 8.8.8.8', mtu: '1420', allowedIps: '10.100.0.0/24', keepAlive: '25' })),

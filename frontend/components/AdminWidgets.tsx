@@ -4,6 +4,7 @@ import { Terminal, Cpu, HardDrive, Wifi, Play, StopCircle, RefreshCw, Save, X, S
 import { Card, Button, Badge, Input } from './UI';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, BarChart, Bar, CartesianGrid, PieChart, Pie, Cell, Legend } from 'recharts';
 import { apiClient } from '../services/apiClient';
+import { useToast } from '../contexts';
 
 // --- Remote Terminal Widget ---
 export const RemoteTerminal: React.FC<{ serverName: string; ip: string; serverId?: string }> = ({ serverName, ip, serverId }) => {
@@ -318,6 +319,7 @@ export const ServiceControls: React.FC<{ serverId?: string }> = ({ serverId }) =
 };
 
 export const FirewallManager: React.FC<{ serverId?: string }> = ({ serverId }) => {
+    const { addToast } = useToast();
     const [rules, setRules] = useState<any[]>([]);
     const [newPort, setNewPort] = useState('');
     const [loading, setLoading] = useState(true);
@@ -342,11 +344,22 @@ export const FirewallManager: React.FC<{ serverId?: string }> = ({ serverId }) =
         }
     };
 
-    const addRule = () => {
+    const addRule = async () => {
         if (!newPort || !serverId) return;
-        // TODO: Implement API call to add firewall rule
-        setRules([...rules, { id: Date.now(), port: newPort, proto: 'TCP', action: 'ALLOW', from: 'Anywhere', desc: 'Custom Rule' }]);
-        setNewPort('');
+        setLoading(true);
+        try {
+            const result = await apiClient.addFirewallRule(serverId, newPort, 'TCP', 'Custom Rule');
+            if (result.success) {
+                setNewPort('');
+                addToast('success', 'Firewall rule added successfully');
+                await fetchRules(); // Refresh rules list
+            }
+        } catch (e: any) {
+            addToast('error', `Failed to add firewall rule: ${e.message}`);
+            console.error('Failed to add firewall rule:', e);
+        } finally {
+            setLoading(false);
+        }
     };
 
     if (loading) {
@@ -374,7 +387,31 @@ export const FirewallManager: React.FC<{ serverId?: string }> = ({ serverId }) =
                                     <td className="p-3"><Badge variant={r.action === 'ALLOW' ? 'success' : 'danger'}>{r.action}</Badge></td>
                                     <td className="p-3">{r.from}</td>
                                     <td className="p-3 italic text-slate-500 dark:text-slate-600">{r.desc}</td>
-                                    <td className="p-3 text-right"><button onClick={() => setRules(rules.filter(x => (x.id || idx) !== (r.id || idx)))} className="text-red-500 hover:text-red-600"><Trash2 size={14}/></button></td>
+                                    <td className="p-3 text-right">
+                                        <button 
+                                            onClick={async () => {
+                                                if (!serverId) return;
+                                                if (!confirm(`Delete firewall rule ${r.port}/${r.proto}?`)) return;
+                                                setLoading(true);
+                                                try {
+                                                    const result = await apiClient.deleteFirewallRule(serverId, r.id?.toString() || idx.toString(), r.port, r.proto);
+                                                    if (result.success) {
+                                                        addToast('success', 'Firewall rule deleted successfully');
+                                                        await fetchRules(); // Refresh rules list
+                                                    }
+                                                } catch (e: any) {
+                                                    addToast('error', `Failed to delete firewall rule: ${e.message}`);
+                                                    console.error('Failed to delete firewall rule:', e);
+                                                } finally {
+                                                    setLoading(false);
+                                                }
+                                            }}
+                                            className="text-red-500 hover:text-red-600 disabled:opacity-50"
+                                            disabled={loading}
+                                        >
+                                            <Trash2 size={14}/>
+                                        </button>
+                                    </td>
                                 </tr>
                             ))}
                         </tbody>

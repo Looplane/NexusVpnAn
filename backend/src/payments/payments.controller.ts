@@ -1,4 +1,4 @@
-import { Controller, Post, Delete, Body, UseGuards, Request } from '@nestjs/common';
+import { Controller, Post, Get, Delete, Body, UseGuards, Request } from '@nestjs/common';
 import { PaymentsService } from './payments.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
@@ -22,5 +22,11 @@ export class PaymentsController {
   @Delete('subscription')
   async cancelSubscription(@Request() req) {
       return this.paymentsService.cancelSubscription(req.user.userId);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('history')
+  async getBillingHistory(@Request() req) {
+      return this.paymentsService.getBillingHistory(req.user.userId);
   }
 }

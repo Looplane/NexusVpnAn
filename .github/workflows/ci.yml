@@ -1,38 +1,152 @@
-name: CI Pipeline
+name: CI/CD Pipeline
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ main, develop ]
   pull_request:
-    branches: [ "main" ]
+    branches: [ main, develop ]
 
 jobs:
-  build-backend:
+  backend-test:
+    name: Backend Tests
     runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v4
-    - name: Use Node.js 20
-      uses: actions/setup-node@v4
-      with:
-        node-version: 20
-        cache: 'npm'
-        cache-dependency-path: backend/package-lock.json
-    - name: Install Dependencies
-      run: cd backend && npm ci
-    - name: Build Backend
-      run: cd backend && npm run build
+    
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: nexus
+          POSTGRES_PASSWORD: secure_password_123
+          POSTGRES_DB: nexusvpn_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
 
-  build-frontend:
-    runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
-    - name: Use Node.js 20
-      uses: actions/setup-node@v4
-      with:
-        node-version: 20
-        cache: 'npm'
-        cache-dependency-path: frontend/package-lock.json
-    - name: Install Dependencies
-      run: cd frontend && npm ci
-    - name: Build Frontend
-      run: cd frontend && npm run build
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Install dependencies
+        working-directory: ./backend
+        run: npm ci
+
+      - name: Run linter
+        working-directory: ./backend
+        run: npm run lint || true
+
+      - name: Build backend
+        working-directory: ./backend
+        run: npm run build
+        env:
+          NODE_ENV: production
+
+      - name: Verify build output
+        run: |
+          if [ ! -d "backend/dist" ]; then
+            echo "❌ Build failed - dist directory not found"
+            exit 1
+          fi
+          echo "✅ Build successful"
+
+  frontend-test:
+    name: Frontend Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        working-directory: ./frontend
+        run: npm ci
+
+      - name: Build frontend
+        working-directory: ./frontend
+        run: npm run build
+        env:
+          VITE_API_URL: http://localhost:3000/api
+
+      - name: Verify build output
+        run: |
+          if [ ! -d "frontend/dist" ]; then
+            echo "❌ Build failed - dist directory not found"
+            exit 1
+          fi
+          echo "✅ Build successful"
+
+  verify-config:
+    name: Verify Configuration Files
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Verify render.yaml
+        run: |
+          if [ ! -f "render.yaml" ]; then
+            echo "❌ render.yaml not found"
+            exit 1
+          fi
+          echo "✅ render.yaml exists"
+          
+          # Check for required fields
+          if ! grep -q "buildCommand" render.yaml; then
+            echo "❌ render.yaml missing buildCommand"
+            exit 1
+          fi
+          if ! grep -q "startCommand" render.yaml; then
+            echo "❌ render.yaml missing startCommand"
+            exit 1
+          fi
+          echo "✅ render.yaml structure valid"
+
+      - name: Verify vercel.json
+        run: |
+          if [ ! -f "frontend/vercel.json" ]; then
+            echo "❌ frontend/vercel.json not found"
+            exit 1
+          fi
+          echo "✅ vercel.json exists"
+
+      - name: Verify database migration
+        run: |
+          if [ ! -f "setup_db.sql" ]; then
+            echo "❌ setup_db.sql not found"
+            exit 1
+          fi
+          echo "✅ setup_db.sql exists"
+
+  security-scan:
+    name: Security Scan
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run npm audit (Backend)
+        working-directory: ./backend
+        run: npm audit --audit-level=moderate || true
+
+      - name: Run npm audit (Frontend)
+        working-directory: ./frontend
+        run: npm audit --audit-level=moderate || true

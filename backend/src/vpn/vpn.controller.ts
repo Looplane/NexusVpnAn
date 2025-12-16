@@ -27,4 +27,10 @@ export class VpnController {
     await this.vpnService.revokeConfig(req.user.userId, configId);
     return { success: true };
   }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('logs')
+  async getConnectionLogs(@Request() req) {
+    return this.vpnService.getConnectionLogs(req.user.userId);
+  }
 }

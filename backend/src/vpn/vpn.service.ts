@@ -8,8 +8,10 @@ import { LocationsService } from '../locations/locations.service';
 import { IpamService } from './ipam.service';
 import { AuditService } from '../audit/audit.service';
 import { UsersService } from '../users/users.service';
+import { UsageService } from '../usage/usage.service';
 import { UserPlan } from '../users/entities/user.entity';
 import { GenerateConfigDto } from './dto/generate-config.dto';
+import { AuditLog } from '../audit/entities/audit-log.entity';
 import * as nacl from 'tweetnacl';
 import * as naclUtil from 'tweetnacl-util';
 
@@ -22,11 +24,14 @@ export class VpnService {
     private vpnConfigRepository: Repository<VpnConfig>,
     @InjectRepository(Server)
     private serverRepository: Repository<Server>,
+    @InjectRepository(AuditLog)
+    private auditLogRepository: Repository<AuditLog>,
     private sshService: SshService,
     private locationsService: LocationsService,
     private ipamService: IpamService,
     private auditService: AuditService,
     private usersService: UsersService,
+    private usageService: UsageService,
   ) { }
 
   async getUserConfigs(userId: string) {
@@ -192,6 +197,68 @@ PersistentKeepalive = 25`;
    * Private key: 32 random bytes, base64-encoded.
    * Public key: Derived from private key via scalar multiplication, base64-encoded.
    */
+  async getConnectionLogs(userId: string) {
+    // Get VPN-related audit logs for the user
+    const logs = await this.auditLogRepository.find({
+      where: {
+        actorId: userId,
+        action: 'VPN_KEY_GENERATED', // We can expand this to include other VPN actions
+      },
+      order: { createdAt: 'DESC' },
+      take: 50,
+    });
+
+    // Transform audit logs to connection log format
+    const connectionLogs = await Promise.all(
+      logs.map(async (log) => {
+        // Try to find the server from the config
+        const config = await this.vpnConfigRepository.findOne({
+          where: { id: log.targetId || '' },
+        });
+        
+        if (!config) {
+          // Return a basic log entry
+          return {
+            id: log.id,
+            serverId: '',
+            serverCity: 'Unknown',
+            connectedAt: log.createdAt.toISOString(),
+            dataTransferred: '0',
+            device: log.details || 'Unknown',
+          };
+        }
+
+        const server = await this.serverRepository.findOne({
+          where: { id: config.locationId },
+        });
+
+        // Get usage data for this config if available
+        let dataTransferred = '0';
+        try {
+          const usageRecords = await this.usageService.getUserUsage(userId);
+          const configUsage = usageRecords.find(r => r.userId === userId);
+          if (configUsage) {
+            const totalBytes = BigInt(configUsage.bytesUploaded) + BigInt(configUsage.bytesDownloaded);
+            dataTransferred = totalBytes.toString();
+          }
+        } catch (e) {
+          // Usage data not available, use default
+        }
+
+        return {
+          id: log.id,
+          serverId: server?.id || '',
+          serverCity: server?.city || 'Unknown',
+          connectedAt: log.createdAt.toISOString(),
+          dataTransferred: dataTransferred,
+          device: config.name,
+        };
+      })
+    );
+
+    return connectionLogs;
+  }
+
   private generateKeypair() {
     // Generate a Curve25519 keypair
     const keypair = nacl.box.keyPair();

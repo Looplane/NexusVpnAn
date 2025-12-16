@@ -13,14 +13,17 @@ import { UsersModule } from '../users/users.module';
 import { UsageModule } from '../usage/usage.module';
 import { Server } from '../locations/entities/server.entity';
 import { FirewallService } from './firewall.service';
+import { AuditLog } from '../audit/entities/audit-log.entity';
+import { AuditModule } from '../audit/audit.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([VpnConfig, IpAssignment, Server]),
+    TypeOrmModule.forFeature([VpnConfig, IpAssignment, Server, AuditLog]),
     SshModule,
     LocationsModule,
     UsersModule,
-    UsageModule, 
+    UsageModule,
+    AuditModule,
   ],
   controllers: [VpnController],
   providers: [VpnService, IpamService, VpnSyncService, FirewallService],

@@ -586,6 +586,79 @@ echo "---------------------------------------------------"
       }
   }
 
+  async addFirewallRule(serverId: string, port: string, protocol: string = 'TCP', description?: string) {
+      const server = await this.serverRepo.findOne({ where: { id: serverId } });
+      if (!server) throw new NotFoundException('Server not found');
+
+      if (!port || !/^\d+$/.test(port)) {
+          throw new BadRequestException('Invalid port number');
+      }
+
+      if (process.env.MOCK_SSH === 'true') {
+          return { success: true, message: 'Firewall rule added (simulated)' };
+      }
+
+      try {
+          const isWindows = await this.isWindowsServer(server);
+          const proto = protocol.toUpperCase();
+          const ruleName = description || `NexusVPN-${port}-${proto}`;
+
+          if (isWindows) {
+              // Windows: Add firewall rule via PowerShell
+              const fwCmd = `powershell -Command "New-NetFirewallRule -DisplayName '${ruleName}' -Direction Inbound -Protocol ${proto} -LocalPort ${port} -Action Allow -ErrorAction SilentlyContinue; if ($?) { Write-Output 'Rule added successfully' } else { Write-Output 'Rule may already exist' }"`;
+              const output = await this.sshService.executeCommandOnServer(fwCmd, server);
+              this.logger.log(`Added firewall rule ${port}/${proto} on ${server.name}`);
+              return { success: true, message: output || 'Firewall rule added' };
+          } else {
+              // Linux: Add UFW rule
+              const ufwCmd = `sudo ufw allow ${port}/${proto.toLowerCase()} comment '${ruleName}'`;
+              const output = await this.sshService.executeCommandOnServer(ufwCmd, server);
+              this.logger.log(`Added firewall rule ${port}/${proto} on ${server.name}`);
+              return { success: true, message: 'Firewall rule added successfully' };
+          }
+      } catch (e) {
+          this.logger.error(`Failed to add firewall rule: ${e.message}`);
+          throw new BadRequestException(`Failed to add firewall rule: ${e.message}`);
+      }
+  }
+
+  async deleteFirewallRule(serverId: string, ruleId: string | number, port?: string, protocol?: string) {
+      const server = await this.serverRepo.findOne({ where: { id: serverId } });
+      if (!server) throw new NotFoundException('Server not found');
+
+      if (process.env.MOCK_SSH === 'true') {
+          return { success: true, message: 'Firewall rule deleted (simulated)' };
+      }
+
+      try {
+          const isWindows = await this.isWindowsServer(server);
+
+          if (isWindows) {
+              // Windows: Delete firewall rule by name or port
+              let fwCmd = '';
+              if (port && protocol) {
+                  const proto = protocol.toUpperCase();
+                  fwCmd = `powershell -Command "Get-NetFirewallRule | Where-Object { (Get-NetFirewallPortFilter -AssociatedNetFirewallRule $_).LocalPort -eq '${port}' -and (Get-NetFirewallPortFilter -AssociatedNetFirewallRule $_).Protocol -eq '${proto}' } | Remove-NetFirewallRule -ErrorAction SilentlyContinue; Write-Output 'Rule removed'"`;
+              } else {
+                  // Delete by rule number/index
+                  fwCmd = `powershell -Command "$rules = Get-NetFirewallRule | Where-Object { $_.Direction -eq 'Inbound' }; if ($rules.Count -gt ${ruleId}) { $rules[${ruleId}] | Remove-NetFirewallRule -ErrorAction SilentlyContinue }; Write-Output 'Rule removed'"`;
+              }
+              const output = await this.sshService.executeCommandOnServer(fwCmd, server);
+              this.logger.log(`Deleted firewall rule ${ruleId} on ${server.name}`);
+              return { success: true, message: output || 'Firewall rule deleted' };
+          } else {
+              // Linux: Delete UFW rule by number
+              const ufwCmd = `sudo ufw --force delete ${ruleId}`;
+              const output = await this.sshService.executeCommandOnServer(ufwCmd, server);
+              this.logger.log(`Deleted firewall rule ${ruleId} on ${server.name}`);
+              return { success: true, message: 'Firewall rule deleted successfully' };
+          }
+      } catch (e) {
+          this.logger.error(`Failed to delete firewall rule: ${e.message}`);
+          throw new BadRequestException(`Failed to delete firewall rule: ${e.message}`);
+      }
+  }
+
   // --- WireGuard Configuration ---
   async getWireGuardConfig(serverId: string) {
       const server = await this.serverRepo.findOne({ where: { id: serverId } });

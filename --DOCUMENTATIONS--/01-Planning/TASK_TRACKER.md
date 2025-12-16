@@ -2,7 +2,7 @@
 
 # 📝 Task Tracker
 
-**Last Updated:** Session 031 - Widget Restoration
+**Last Updated:** Session 032 - Cloud Deployment Verification
 
 ## Active Sprint: Mobile & App Ecosystem
 
@@ -12,8 +12,9 @@
 | MOB-002 | Mobile Login Screen | **Complete** | High | Frontend-Agent |
 | MOB-003 | Mobile Dashboard | **Complete** | High | Frontend-Agent |
 | MOB-004 | WireGuard Native Module | **Todo** | High | Mobile-Expert |
-| DEP-001 | Setup Supabase DB | **Todo** | High | Backend-Agent |
-| DEP-002 | Deploy Frontend (Vercel) | **Todo** | High | Frontend-Agent |
+| DEP-001 | Setup Supabase DB | **In Progress** | High | Backend-Agent |
+| DEP-002 | Deploy Frontend (Vercel) | **Ready** | High | Frontend-Agent |
+| DEP-003 | Cloud Deployment Config | **Complete** | High | DevOps |
 
 ## Completed
 
@@ -27,6 +28,9 @@
 | UI-050 | Restore Active Devices | **Complete** | High |
 | UI-051 | Restore Data Usage | **Complete** | High |
 | UI-052 | Add Connection Quality | **Complete** | Medium |
+| DEP-003 | Cloud Deployment Config | **Complete** | High |
+| DEP-004 | Cloud Deployment Scripts | **Complete** | High |
+| DEP-005 | CI/CD Pipeline | **Complete** | Medium |
 
 ---
 
@@ -38,6 +42,10 @@
 | UI-050 | Restore Active Devices | ✅ Complete | Reverted to card style |
 | UI-051 | Restore Data Usage | ✅ Complete | Added visual progress bar |
 | UI-052 | Add Connection Quality | ✅ Complete | New sidebar widget |
+| DEP-003 | Cloud Deployment Config | ✅ Complete | render.yaml & env vars verified |
+| DEP-004 | Cloud Deployment Scripts | ✅ Complete | Helper scripts created |
+| DEP-005 | CI/CD Pipeline | ✅ Complete | GitHub Actions workflow added |
 
 ### Next Up:
-- **Cloud Deployment:** Verification of env vars and build scripts.
+- **Manual Deployment:** Deploy to Render and Vercel using verified configs.
+- **Database Setup:** Run Supabase migration using setup script.

@@ -1,5 +1,5 @@
 
-import { Controller, Get, Post, Patch, Delete, Body, Param, UseGuards, Request } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Delete, Body, Param, Query, UseGuards, Request } from '@nestjs/common';
 import { AdminService } from './admin.service';
 import { CampaignService } from './campaign.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
@@ -63,7 +63,7 @@ export class AdminController {
 
   @Get('servers/:id/logs')
   @Roles(UserRole.ADMIN)
-  async getServerLogs(@Param('id') id: string, @Body('lines') lines?: number) {
+  async getServerLogs(@Param('id') id: string, @Query('lines') lines?: number) {
       return this.adminService.getServerLogs(id, lines || 50);
   }
 
@@ -77,6 +77,18 @@ export class AdminController {
   @Roles(UserRole.ADMIN)
   async getFirewallRules(@Param('id') id: string) {
       return this.adminService.getFirewallRules(id);
+  }
+
+  @Post('servers/:id/firewall')
+  @Roles(UserRole.ADMIN)
+  async addFirewallRule(@Param('id') id: string, @Body() body: { port: string; protocol?: string; description?: string }) {
+      return this.adminService.addFirewallRule(id, body.port, body.protocol || 'TCP', body.description);
+  }
+
+  @Delete('servers/:id/firewall/:ruleId')
+  @Roles(UserRole.ADMIN)
+  async deleteFirewallRule(@Param('id') id: string, @Param('ruleId') ruleId: string, @Query('port') port?: string, @Query('protocol') protocol?: string) {
+      return this.adminService.deleteFirewallRule(id, ruleId, port, protocol);
   }
 
   @Get('servers/:id/config')

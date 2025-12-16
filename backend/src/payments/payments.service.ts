@@ -98,6 +98,43 @@ export class PaymentsService {
       // this.emailService.sendPaymentFailedEmail(...)
   }
 
+  async getBillingHistory(userId: string) {
+      const user = await this.usersService.findOneById(userId);
+      
+      // In a real implementation, query Stripe for invoices
+      // For now, return mock data based on user plan
+      if (!process.env.STRIPE_SECRET_KEY || !user.stripeCustomerId) {
+          this.logger.log(`Returning mock billing history for user ${userId}`);
+          const planName = user.plan === UserPlan.PRO ? 'Pro' : user.plan === UserPlan.BASIC ? 'Basic' : 'Free';
+          const amount = user.plan === UserPlan.PRO ? 999 : user.plan === UserPlan.BASIC ? 499 : 0;
+          
+          // Return format matching BillingInvoice interface
+          return [
+              {
+                  id: 'inv_mock_1',
+                  date: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // Format: YYYY-MM-DD
+                  amount: amount, // Amount in cents
+                  status: amount > 0 ? 'paid' : 'free',
+                  planName: planName,
+                  pdfUrl: amount > 0 ? '#' : undefined,
+              },
+          ];
+      }
+
+      // Real Stripe implementation would go here
+      // const invoices = await this.stripe.invoices.list({ customer: user.stripeCustomerId });
+      // return invoices.data.map(inv => ({
+      //     id: inv.id,
+      //     date: new Date(inv.created * 1000).toISOString().split('T')[0],
+      //     amount: inv.amount_paid,
+      //     status: inv.status === 'paid' ? 'paid' : 'pending',
+      //     planName: inv.metadata?.plan || 'Unknown',
+      //     pdfUrl: inv.invoice_pdf || '#',
+      // }));
+      
+      return [];
+  }
+
   private getPriceIdForPlan(plan: string) {
       const map = {
           'basic': 'price_basic_123',

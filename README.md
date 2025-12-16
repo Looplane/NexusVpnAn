@@ -56,10 +56,28 @@ This opens:
 
 ## ☁️ Cloud Deployment
 
-See [`CLOUD_DEPLOYMENT.md`](./CLOUD_DEPLOYMENT.md) for production deployment to:
-- **Database**: Supabase
-- **Backend**: Render/Railway
-- **Frontend**: Vercel
+**✅ Ready for Production Deployment!**
+
+Deploy to cloud platforms with minimal configuration:
+
+- **Database**: Supabase (PostgreSQL)
+- **Backend**: Render (auto-detects `render.yaml`)
+- **Frontend**: Vercel (uses `vercel.json`)
+
+### Quick Start
+```bash
+# Automated deployment guide
+./infrastructure/deploy-to-cloud.sh
+
+# Or follow the step-by-step guide
+# See: --DOCUMENTATIONS--/QUICK_CLOUD_DEPLOYMENT.md
+```
+
+### Documentation
+- **Quick Guide**: [`QUICK_CLOUD_DEPLOYMENT.md`](./--DOCUMENTATIONS--/QUICK_CLOUD_DEPLOYMENT.md) - 5-step deployment
+- **Detailed Guide**: [`CLOUD_DEPLOYMENT.md`](./CLOUD_DEPLOYMENT.md) - Complete instructions
+- **Post-Deployment**: [`POST_DEPLOYMENT_GUIDE.md`](./--DOCUMENTATIONS--/POST_DEPLOYMENT_GUIDE.md) - Testing & troubleshooting
+- **Checklist**: [`DEPLOYMENT_CHECKLIST.md`](./DEPLOYMENT_CHECKLIST.md) - Deployment checklist
 
 ## 🤖 AI Agents & MCP Integration
 
@@ -92,12 +110,13 @@ Compatible with: Cursor, Windsurf, VS Code, Trae, Google AI Studio, Anthropic Co
 
 ## 📈 Current Status
 
-**Phase 3: The Wire** (40% Complete)
+**Phase 3: The Wire** (60% Complete)
 - ✅ Real WireGuard key generation
 - ✅ SSH service with retry logic
 - ✅ VPS provisioning scripts
+- ✅ Cloud deployment configuration
+- ✅ CI/CD pipeline
 - 🔲 Live VPS testing
-- 🔲 Cloud deployment
 
 ## 📄 License
 

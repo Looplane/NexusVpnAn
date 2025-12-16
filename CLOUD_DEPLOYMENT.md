@@ -40,19 +40,34 @@ psql "postgres://postgres:[PASSWORD]@[HOST]:5432/postgres" < setup_db.sql
 ## 2️⃣ Backend: Render Deployment
 
 ### Step 1: Create Web Service
+
+**Option A: Using render.yaml (Recommended)**
+1. Connect GitHub repository to Render
+2. Render will automatically detect `render.yaml` in the root
+3. All configuration (build commands, env vars) will be loaded automatically
+
+**Option B: Manual Setup**
 1. Connect GitHub repository
 2. Select `backend` directory as root
-3. Build command: `npm install && npm run build`
-4. Start command: `npm run start:prod`
+3. Build command: `cd backend && npm install && npm run build`
+4. Start command: `cd backend && npm run start:prod`
 
 ### Step 2: Environment Variables
+Set these in Render dashboard under "Environment" tab:
+
 ```env
 NODE_ENV=production
-DATABASE_URL=postgres://postgres:[PASSWORD]@[HOST]:5432/postgres
-JWT_SECRET=[GENERATE_RANDOM_STRING]
+PORT=10000
+DATABASE_URL=postgres://nexus:password@dpg-xxxxx-a.oregon-postgres.render.com/nexusvpn
+JWT_SECRET=<generate-random-32-char-string>
+FRONTEND_URL=https://nexusvpn.vercel.app
 CORS_ORIGIN=https://nexusvpn.vercel.app
 MOCK_SSH=true
+STRIPE_SECRET_KEY=sk_live_xxxxx (optional)
+STRIPE_WEBHOOK_SECRET=whsec_xxxxx (optional)
 ```
+
+**Note:** The `DATABASE_URL` is automatically set when you link the database in Render. You can also use the `render.yaml` file which includes all these variables.
 
 ### Step 3: Health Check
 - Path: `/`
