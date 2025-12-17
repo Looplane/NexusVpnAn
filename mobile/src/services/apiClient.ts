@@ -34,13 +34,21 @@ export const apiClient = {
 
       const data = await handleResponse(res);
 
+      // Check if 2FA is required first, regardless of token presence
+      // Backend might return an intermediate token that still requires 2FA verification
+      // Use truthy check to handle boolean true, truthy strings, numbers, etc.
+      if (data.requires2fa) {
+        return { success: false, requires2fa: Boolean(data.requires2fa) };
+      }
+
       if (data.accessToken || data.access_token) {
         const token = data.accessToken || data.access_token;
         await SecureStore.setItemAsync('nexus_token', token);
         await SecureStore.setItemAsync('nexus_user', JSON.stringify(data.user || {}));
         return { success: true, requires2fa: false };
       }
-      return { success: false, requires2fa: data.requires2fa || false };
+      // Preserve the original requires2fa value if present (normalized to boolean), default to false
+      return { success: false, requires2fa: Boolean(data.requires2fa) };
     } catch (e: any) {
       console.error('Login Error:', e);
       throw new Error(e.message || 'Login failed');
