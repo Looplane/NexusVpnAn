@@ -38,11 +38,17 @@ export class HttpExceptionFilter implements ExceptionFilter {
     }
 
     // Build log context
+    const requestIdHeader = request.headers['x-request-id'];
+    const forwardedFor = request.headers['x-forwarded-for'];
+    const ipValue = request.ip || 
+      (typeof forwardedFor === 'string' ? forwardedFor : Array.isArray(forwardedFor) ? forwardedFor[0] : 'unknown') || 
+      'unknown';
+    
     const logContext: LogContext = {
-      requestId: request.id || request.headers['x-request-id'],
+      requestId: typeof requestIdHeader === 'string' ? requestIdHeader : Array.isArray(requestIdHeader) ? requestIdHeader[0] : undefined,
       userId: (request as any).user?.userId,
-      ip: request.ip || request.headers['x-forwarded-for'] || 'unknown',
-      userAgent: request.headers['user-agent'],
+      ip: ipValue,
+      userAgent: typeof request.headers['user-agent'] === 'string' ? request.headers['user-agent'] : undefined,
       method: request.method,
       url: request.url,
     };

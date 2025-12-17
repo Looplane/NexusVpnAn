@@ -23,6 +23,7 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
     if (redisUrl || (redisHost && redisPort)) {
       try {
         // Dynamic import to avoid requiring redis in dev
+        // @ts-expect-error - redis is an optional dependency
         const redis = await import('redis');
         this.redisClient = redis.createClient({
           url: redisUrl || `redis://${redisHost}:${redisPort}`,
