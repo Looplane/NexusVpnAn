@@ -43,7 +43,7 @@
       "command": "node",
       "args": ["mcp-servers/supabase-mcp/dist/index.js"],
       "env": {
-        "SUPABASE_URL": "https://xorjbccyuinebimlxblu.supabase.co",
+        "SUPABASE_URL": "${SUPABASE_URL}",
         "SUPABASE_KEY": "${SUPABASE_KEY}"
       }
     },

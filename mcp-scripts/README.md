@@ -34,13 +34,28 @@ Create a `.env.mcp` file in the project root with the following variables:
 
 ```bash
 # Supabase Configuration
-SUPABASE_URL=https://xorjbccyuinebimlxblu.supabase.co
-SUPABASE_KEY=your-supabase-anon-key
-SUPABASE_SERVICE_KEY=your-supabase-service-key
+# Get your Supabase URL and anon key from: https://app.supabase.com/project/_/settings/api
+SUPABASE_URL=your-supabase-url-here
+SUPABASE_KEY=your-supabase-anon-key-here
+SUPABASE_SERVICE_KEY=your-supabase-service-key-here
 
 # Render Configuration
-RENDER_API_KEY=your-render-api-key
-RENDER_SERVICE_ID=your-render-service-id
+# Get your API key from: https://dashboard.render.com/account/api-keys
+RENDER_API_KEY=your-render-api-key-here
+RENDER_SERVICE_ID=your-render-service-id-here
+
+# Firecrawl Configuration
+# Get your API key from: https://firecrawl.dev
+FIRECRAWL_API_KEY=your-firecrawl-api-key-here
+
+# GitHub Configuration
+# Get your token from: https://github.com/settings/tokens
+# Required scopes: repo, read:org, read:user
+GITHUB_TOKEN=your-github-personal-access-token
+
+# Figma Configuration
+# Get your API key from: https://www.figma.com/developers/api#access-tokens
+FIGMA_API_KEY=your-figma-api-key-here
 ```
 
 ## MCP Configuration File

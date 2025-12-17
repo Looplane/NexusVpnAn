@@ -1,15 +1,24 @@
 const { DataSource } = require('typeorm');
+require('dotenv').config();
+
+const databaseUrl = process.env.DATABASE_URL;
+
+if (!databaseUrl) {
+  console.error('❌ DATABASE_URL environment variable is not set!');
+  console.error('Please set DATABASE_URL in your .env file or environment variables.');
+  process.exit(1);
+}
 
 const AppDataSource = new DataSource({
   type: 'postgres',
-  url: 'postgresql://postgres:NexusVPN02110@db.xorjbccyuinebimlxblu.supabase.co:5432/postgres',
+  url: databaseUrl,
   ssl: { rejectUnauthorized: false },
   synchronize: false,
   logging: true
 });
 
 console.log('Testing database connection...');
-console.log('URL:', 'postgresql://postgres:NexusVPN02110@db.xorjbccyuinebimlxblu.supabase.co:5432/postgres');
+console.log('URL:', databaseUrl.replace(/:[^:@]+@/, ':****@')); // Mask password in logs
 
 AppDataSource.initialize()
   .then(() => {

@@ -29,9 +29,15 @@ The Supabase MCP server provides tools for interacting with your Supabase databa
    ```
 
 4. Set environment variables:
+   Create a `.env.mcp` file in the project root or set environment variables:
    ```bash
-   export SUPABASE_URL="https://xorjbccyuinebimlxblu.supabase.co"
-   export SUPABASE_KEY="your-supabase-anon-key"
+   # Option 1: Create .env.mcp file (recommended)
+   cp .env.mcp.example .env.mcp
+   # Then edit .env.mcp with your actual credentials
+   
+   # Option 2: Set environment variables directly
+   export SUPABASE_URL="your-supabase-url-here"
+   export SUPABASE_KEY="your-supabase-anon-key-here"
    ```
 
 ### Usage
@@ -90,8 +96,8 @@ To integrate these MCP servers with your IDE (like Trae), add the following conf
       "command": "node",
       "args": ["mcp-servers/supabase-mcp/dist/index.js"],
       "env": {
-        "SUPABASE_URL": "https://xorjbccyuinebimlxblu.supabase.co",
-        "SUPABASE_KEY": "your-supabase-anon-key"
+        "SUPABASE_URL": "${SUPABASE_URL}",
+        "SUPABASE_KEY": "${SUPABASE_KEY}"
       }
     },
     "render": {

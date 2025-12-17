@@ -7,11 +7,18 @@ import {
 import { createClient } from '@supabase/supabase-js';
 import { z } from 'zod';
 import dotenv from 'dotenv';
+import { resolve } from 'path';
 
-dotenv.config();
+// Try to load .env.mcp file first, then fall back to .env
+dotenv.config({ path: resolve(process.cwd(), '.env.mcp') });
+dotenv.config(); // Also load .env for backward compatibility
 
-const supabaseUrl = process.env.SUPABASE_URL || 'https://xorjbccyuinebimlxblu.supabase.co';
-const supabaseKey = process.env.SUPABASE_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhvcmpiY2N5dWluZWJpbWx4Ymx1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU3MzU1NjksImV4cCI6MjA4MTMxMTU2OX0.nYPfU9o3uJ3r8lefPgQSb1Jg-y7A8bYJkTvXQ8ieCMM';
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseKey = process.env.SUPABASE_KEY;
+
+if (!supabaseUrl || !supabaseKey) {
+  throw new Error('Missing required environment variables: SUPABASE_URL and SUPABASE_KEY must be set');
+}
 
 const supabase = createClient(supabaseUrl, supabaseKey);
 

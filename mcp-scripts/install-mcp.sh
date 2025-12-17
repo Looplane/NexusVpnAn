@@ -54,9 +54,10 @@ setup_mcp_server "render-mcp"
 echo "Creating environment configuration..."
 cat > .env.mcp.example << EOF
 # Supabase Configuration
-SUPABASE_URL=https://xorjbccyuinebimlxblu.supabase.co
-SUPABASE_KEY=your-supabase-anon-key
-SUPABASE_SERVICE_KEY=your-supabase-service-key
+# Get your Supabase URL and anon key from: https://app.supabase.com/project/_/settings/api
+SUPABASE_URL=your-supabase-url-here
+SUPABASE_KEY=your-supabase-anon-key-here
+SUPABASE_SERVICE_KEY=your-supabase-service-key-here
 
 # Render Configuration  
 RENDER_API_KEY=your-render-api-key
@@ -91,12 +92,45 @@ cat > mcp-config.json << EOF
       }
     },
     "render": {
-      "name": "Render MCP Server", 
+      "name": "Render MCP Server",
       "description": "MCP server for Render service management",
       "command": "node",
       "args": ["mcp-servers/render-mcp/dist/index.js"],
       "env": {
         "RENDER_API_KEY": "\${RENDER_API_KEY}"
+      }
+    },
+    "firecrawl": {
+      "name": "Firecrawl MCP Server",
+      "description": "MCP server for web scraping and data extraction using Firecrawl",
+      "command": "npx",
+      "args": ["-y", "firecrawl-mcp"],
+      "env": {
+        "FIRECRAWL_API_KEY": "\${FIRECRAWL_API_KEY}",
+        "FIRECRAWL_RETRY_MAX_ATTEMPTS": "3",
+        "FIRECRAWL_RETRY_INITIAL_DELAY": "1000",
+        "FIRECRAWL_RETRY_MAX_DELAY": "10000",
+        "FIRECRAWL_RETRY_BACKOFF_FACTOR": "2",
+        "FIRECRAWL_CREDIT_WARNING_THRESHOLD": "1000",
+        "FIRECRAWL_CREDIT_CRITICAL_THRESHOLD": "100"
+      }
+    },
+    "github": {
+      "name": "GitHub MCP Server",
+      "description": "MCP server for GitHub repository operations, PR management, and issue tracking",
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-github"],
+      "env": {
+        "GITHUB_PERSONAL_ACCESS_TOKEN": "\${GITHUB_TOKEN}"
+      }
+    },
+    "figma": {
+      "name": "Figma MCP Server",
+      "description": "MCP server for Figma design file access and design-to-code workflows",
+      "command": "npx",
+      "args": ["-y", "figma-developer-mcp@0.6.3"],
+      "env": {
+        "FIGMA_API_KEY": "\${FIGMA_API_KEY}"
       }
     }
   }

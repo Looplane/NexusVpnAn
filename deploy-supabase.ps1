@@ -8,7 +8,13 @@ Write-Host ""
 
 # Supabase Connection Details
 $SUPABASE_PROJECT = "GenziNest-NexusVPN"
-$SUPABASE_PASSWORD = "NexusVPN02110"
+# Get password from environment variable or prompt
+$SUPABASE_PASSWORD = $env:SUPABASE_DB_PASSWORD
+if ([string]::IsNullOrWhiteSpace($SUPABASE_PASSWORD)) {
+    Write-Host "⚠️  SUPABASE_DB_PASSWORD environment variable not set." -ForegroundColor Yellow
+    Write-Host "   You can set it with: `$env:SUPABASE_DB_PASSWORD = 'your-password'" -ForegroundColor Yellow
+    $SUPABASE_PASSWORD = Read-Host "Enter Supabase Database Password"
+}
 
 Write-Host "Project: $SUPABASE_PROJECT" -ForegroundColor Yellow
 Write-Host ""

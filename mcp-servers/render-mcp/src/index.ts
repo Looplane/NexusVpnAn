@@ -7,10 +7,17 @@ import {
 import axios from 'axios';
 import { z } from 'zod';
 import dotenv from 'dotenv';
+import { resolve } from 'path';
 
-dotenv.config();
+// Try to load .env.mcp file first, then fall back to .env
+dotenv.config({ path: resolve(process.cwd(), '.env.mcp') });
+dotenv.config(); // Also load .env for backward compatibility
 
-const RENDER_API_KEY = process.env.RENDER_API_KEY || '';
+const RENDER_API_KEY = process.env.RENDER_API_KEY;
+
+if (!RENDER_API_KEY) {
+  throw new Error('Missing required environment variable: RENDER_API_KEY must be set');
+}
 const RENDER_API_BASE = 'https://api.render.com/v1';
 
 const server = new Server(
@@ -234,10 +241,6 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       }
 
       case 'test_render_connection': {
-        if (!RENDER_API_KEY) {
-          throw new Error('RENDER_API_KEY environment variable is not set');
-        }
-        
         const result = await makeRenderRequest('/services?limit=1');
         
         return {

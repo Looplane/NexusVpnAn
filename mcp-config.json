@@ -6,8 +6,8 @@
       "command": "node",
       "args": ["mcp-servers/supabase-mcp/dist/index.js"],
       "env": {
-        "SUPABASE_URL": "https://xorjbccyuinebimlxblu.supabase.co",
-        "SUPABASE_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhvcmpiY2N5dWluZWJpbWx4Ymx1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU3MzU1NjksImV4cCI6MjA4MTMxMTU2OX0.nYPfU9o3uJ3r8lefPgQSb1Jg-y7A8bYJkTvXQ8ieCMM"
+        "SUPABASE_URL": "${SUPABASE_URL}",
+        "SUPABASE_KEY": "${SUPABASE_KEY}"
       }
     },
     "render": {
@@ -16,7 +16,7 @@
       "command": "node",
       "args": ["mcp-servers/render-mcp/dist/index.js"],
       "env": {
-        "RENDER_API_KEY": "your-render-api-key-here"
+        "RENDER_API_KEY": "${RENDER_API_KEY}"
       }
     },
     "firecrawl": {
@@ -25,7 +25,7 @@
       "command": "npx",
       "args": ["-y", "firecrawl-mcp"],
       "env": {
-        "FIRECRAWL_API_KEY": "fc-d7b41c4f1c7a49eca63ea166bed5e181",
+        "FIRECRAWL_API_KEY": "${FIRECRAWL_API_KEY}",
         "FIRECRAWL_RETRY_MAX_ATTEMPTS": "3",
         "FIRECRAWL_RETRY_INITIAL_DELAY": "1000",
         "FIRECRAWL_RETRY_MAX_DELAY": "10000",
