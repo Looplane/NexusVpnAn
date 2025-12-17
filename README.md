@@ -70,14 +70,14 @@ Deploy to cloud platforms with minimal configuration:
 ./infrastructure/deploy-to-cloud.sh
 
 # Or follow the step-by-step guide
-# See: --DOCUMENTATIONS--/QUICK_CLOUD_DEPLOYMENT.md
+# See: --DOCUMENTATIONS--/06-Deployment/05-DEP-Quick_Cloud_Deployment_17-12-2025_024425.md
 ```
 
 ### Documentation
-- **Quick Guide**: [`QUICK_CLOUD_DEPLOYMENT.md`](./--DOCUMENTATIONS--/QUICK_CLOUD_DEPLOYMENT.md) - 5-step deployment
-- **Detailed Guide**: [`CLOUD_DEPLOYMENT.md`](./CLOUD_DEPLOYMENT.md) - Complete instructions
-- **Post-Deployment**: [`POST_DEPLOYMENT_GUIDE.md`](./--DOCUMENTATIONS--/POST_DEPLOYMENT_GUIDE.md) - Testing & troubleshooting
-- **Checklist**: [`DEPLOYMENT_CHECKLIST.md`](./DEPLOYMENT_CHECKLIST.md) - Deployment checklist
+- **Quick Guide**: [`05-DEP-Quick_Cloud_Deployment`](./--DOCUMENTATIONS--/06-Deployment/05-DEP-Quick_Cloud_Deployment_17-12-2025_024425.md) - 5-step deployment
+- **Detailed Guide**: [`30-DEP-Cloud_Deployment`](./--DOCUMENTATIONS--/06-Deployment/30-DEP-Cloud_Deployment_17-12-2025_032824.md) - Complete instructions
+- **Post-Deployment**: [`04-DEP-Post_Deployment_Guide`](./--DOCUMENTATIONS--/06-Deployment/04-DEP-Post_Deployment_Guide_17-12-2025_024425.md) - Testing & troubleshooting
+- **Checklist**: [`27-DEP-Deployment_Checklist`](./--DOCUMENTATIONS--/06-Deployment/27-DEP-Deployment_Checklist_17-12-2025_032824.md) - Deployment checklist
 
 ## 🤖 AI Agents & MCP Integration
 
@@ -85,7 +85,7 @@ This project includes comprehensive AI agent configurations and Model Context Pr
 
 - **AI Agents**: [`agents/`](./agents/) - Universal AI agent registry
 - **MCP Servers**: [`mcp-servers/`](./mcp-servers/) - Supabase & Render integration
-- **Agent Docs**: [`AI_AGENTS_README.md`](./AI_AGENTS_README.md) - Complete setup guide
+- **Agent Docs**: [`02-GD-AI_Agents_And_MCP_Integration`](./--DOCUMENTATIONS--/04-Guides/02-GD-AI_Agents_And_MCP_Integration_17-12-2025_032824.md) - Complete setup guide
 
 Compatible with: Cursor, Windsurf, VS Code, Trae, Google AI Studio, Anthropic Console, and more.
 

@@ -1,4 +1,4 @@
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, ManyToOne, JoinColumn } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, ManyToOne, JoinColumn, Index } from 'typeorm';
 import { User } from '../../users/entities/user.entity';
 
 @Entity('vpn_configs')
@@ -9,9 +9,11 @@ export class VpnConfig {
   @Column()
   name: string;
 
+  @Index()
   @Column()
   locationId: string;
 
+  @Index()
   @Column()
   publicKey: string;
 
@@ -28,6 +30,7 @@ export class VpnConfig {
   @JoinColumn({ name: 'userId' })
   user: User;
 
+  @Index()
   @Column()
   userId: string;
 }

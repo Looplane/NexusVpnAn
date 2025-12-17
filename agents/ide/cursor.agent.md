@@ -200,7 +200,7 @@ Agent:
 
 ### With Project Structure
 - Respects `--DOCUMENTATIONS--/` structure
-- Follows My-AGENTS policies
+- Follows @agents/ policies
 - Integrates with existing tools
 - Maintains backward compatibility
 

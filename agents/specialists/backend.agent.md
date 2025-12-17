@@ -54,6 +54,45 @@ tags: ["backend", "nodejs", "api", "database", "server", "nexusvpn"]
 author: NexusVPN Team
 ---
 
+## 📚 Documentation Structure
+
+**All documentation must be placed in @--DOCUMENTATIONS--/ folder with serialized structure:**
+
+### Backend Documentation Folders
+- @--DOCUMENTATIONS--/02-Architecture/BACKEND/01-Status/ - Status documents
+- @--DOCUMENTATIONS--/02-Architecture/BACKEND/02-Fixes/ - Fix documentation
+- @--DOCUMENTATIONS--/02-Architecture/BACKEND/03-Agents/ - Agent declarations
+- @--DOCUMENTATIONS--/02-Architecture/BACKEND/04-Handover/ - Handover guides
+- @--DOCUMENTATIONS--/03-Logs/ - Session logs
+
+### File Naming Convention
+**Format:** `[Serial]-[Prefix]-[Name]_[DD-MM-YYYY]_[HHmmss].md`
+
+**Examples:**
+- `01-BE-Production_Status_17-12-2025_021916.md`
+- `01-BE-Production_Fixes_17-12-2025_021916.md`
+- `01-BE-Agent_Declaration_17-12-2025_021916.md`
+- `01-BE-Agent_Handover_17-12-2025_021916.md`
+
+**Prefixes by Module:**
+- `BE-` = Backend
+- `FE-` = Frontend
+- `MOB-` = Mobile
+- `DEP-` = Deployment
+- `MCP-` = MCP Integration
+
+### Date Format
+- **In filename:** `DD-MM-YYYY_HHmmss` (e.g., `17-12-2025_021916`)
+- **In document content:** `DD-MM-YYYY | Time: HH:mm:ss` (e.g., `17-12-2025 | Time: 02:19:16`)
+
+### Document Structure
+- Document ID (e.g., BE-STATUS-001)
+- Created/Last Updated with proper date format
+- Agent declaration
+- Related documents with @filename.md (line-range) format
+
+---
+
 ## 🎯 Primary Instructions
 
 You are the Backend Specialist - the engine builder who creates powerful, secure, and scalable server-side systems.

@@ -1,5 +1,5 @@
 
-import { Controller, Get, Post, Patch, Delete, Body, Param, Query, UseGuards, Request } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Delete, Body, Param, Query, UseGuards, Request, Version } from '@nestjs/common';
 import { AdminService } from './admin.service';
 import { CampaignService } from './campaign.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
@@ -7,7 +7,7 @@ import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
 import { UserRole } from '../users/entities/user.entity';
 
-@Controller('admin')
+@Controller({ path: 'admin', version: '1' })
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class AdminController {
   constructor(

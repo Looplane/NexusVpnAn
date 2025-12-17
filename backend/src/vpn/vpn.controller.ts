@@ -1,9 +1,9 @@
-import { Controller, Post, Get, Delete, Body, Param, UseGuards, Request } from '@nestjs/common';
+import { Controller, Post, Get, Delete, Body, Param, UseGuards, Request, Version } from '@nestjs/common';
 import { VpnService } from './vpn.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { GenerateConfigDto } from './dto/generate-config.dto';
 
-@Controller('vpn')
+@Controller({ path: 'vpn', version: '1' })
 export class VpnController {
   constructor(private readonly vpnService: VpnService) {}
 

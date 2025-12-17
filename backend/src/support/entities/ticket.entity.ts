@@ -1,4 +1,4 @@
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn, Index } from 'typeorm';
 import { User } from '../../users/entities/user.entity';
 
 @Entity('tickets')
@@ -9,12 +9,14 @@ export class Ticket {
   @Column()
   subject: string;
 
+  @Index()
   @Column({ default: 'open' })
   status: 'open' | 'answered' | 'closed';
 
   @Column({ default: 'medium' })
   priority: 'low' | 'medium' | 'high';
 
+  @Index()
   @Column()
   userId: string;
 
@@ -25,6 +27,7 @@ export class Ticket {
   @CreateDateColumn()
   createdAt: Date;
 
+  @Index()
   @UpdateDateColumn()
   updatedAt: Date;
 }

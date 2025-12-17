@@ -34,30 +34,59 @@ export class SupportService {
     return savedTicket;
   }
 
-  async getTickets(userId: string, isAdmin = false) {
+  async getTickets(userId: string, isAdmin = false, page = 1, limit = 20) {
+    const skip = (page - 1) * limit;
+    
     if (isAdmin) {
-      return this.ticketRepo.find({ 
+      const [tickets, total] = await this.ticketRepo.findAndCount({ 
         order: { updatedAt: 'DESC' },
-        relations: ['user'] // To get email for admin view
+        relations: ['user'], // To get email for admin view
+        skip,
+        take: limit,
       });
+      return {
+        tickets,
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      };
     }
-    return this.ticketRepo.find({ 
+    
+    const [tickets, total] = await this.ticketRepo.findAndCount({ 
       where: { userId }, 
-      order: { updatedAt: 'DESC' } 
+      order: { updatedAt: 'DESC' },
+      skip,
+      take: limit,
     });
+    
+    return {
+      tickets,
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+    };
   }
 
   async getMessages(ticketId: string, userId: string, isAdmin = false) {
-    const ticket = await this.ticketRepo.findOne({ where: { id: ticketId } });
+    // Use query builder for better performance with relations
+    const ticket = await this.ticketRepo
+      .createQueryBuilder('ticket')
+      .where('ticket.id = :ticketId', { ticketId })
+      .getOne();
+      
     if (!ticket) throw new NotFoundException('Ticket not found');
     
     if (!isAdmin && ticket.userId !== userId) {
       throw new NotFoundException('Ticket not found');
     }
 
+    // Optimized query with proper ordering
     return this.messageRepo.find({
       where: { ticketId },
       order: { createdAt: 'ASC' },
+      // Add relations if needed in future (e.g., sender info)
     });
   }
 

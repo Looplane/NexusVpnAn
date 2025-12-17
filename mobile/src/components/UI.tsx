@@ -6,9 +6,10 @@ interface ButtonProps {
   onPress: () => void;
   variant?: 'primary' | 'secondary' | 'danger' | 'outline';
   isLoading?: boolean;
+  disabled?: boolean;
 }
 
-export const Button: React.FC<ButtonProps> = ({ title, onPress, variant = 'primary', isLoading }) => {
+export const Button: React.FC<ButtonProps> = ({ title, onPress, variant = 'primary', isLoading, disabled }) => {
   const getBgColor = () => {
     if (variant === 'primary') return '#0ea5e9'; // brand-500
     if (variant === 'danger') return '#ef444440'; // red-500/25
@@ -25,10 +26,15 @@ export const Button: React.FC<ButtonProps> = ({ title, onPress, variant = 'prima
   return (
     <TouchableOpacity 
       onPress={onPress} 
-      disabled={isLoading}
+      disabled={isLoading || disabled}
       style={[
         styles.btn, 
-        { backgroundColor: getBgColor(), borderWidth: variant === 'outline' ? 1 : 0, borderColor: '#475569' }
+        { 
+          backgroundColor: getBgColor(), 
+          borderWidth: variant === 'outline' ? 1 : 0, 
+          borderColor: '#475569',
+          opacity: (isLoading || disabled) ? 0.5 : 1
+        }
       ]}
     >
       {isLoading ? (

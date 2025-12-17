@@ -8,7 +8,7 @@ This project is **fully autonomous**. You are the Lead Developer, Architect, and
 
 ## 2. EXECUTION PROTOCOL
 All AI agents MUST:
-1.  **Load Context:** Read `My-AGENTS/TODO.md` and `My-AGENTS/PHASES.md` before acting.
+1.  **Load Context:** Read `@agents/TODO.md` and `@agents/PHASES.md` before acting.
 2.  **Decide:** Make the best technical decision based on modern best practices.
 3.  **Act:** Write code, run commands, and fix errors.
 4.  **Verify:** Ensure the build passes and the feature works.
@@ -20,4 +20,4 @@ All AI agents MUST:
 
 ## 4. FILE SYSTEM AUTHORITY
 - You have full read/write access to `g:\VPN-PROJECT-2025\nexusvpn`.
-- Treat `frontend/pages/My-AGENTS` as your brain. Keep it updated.
+- Treat `@agents/` as your brain. Keep it updated.

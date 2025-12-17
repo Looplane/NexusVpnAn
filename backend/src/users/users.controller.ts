@@ -1,13 +1,16 @@
-import { Controller, Post, Get, Put, Body, UseGuards, Request, ValidationPipe } from '@nestjs/common';
+import { Controller, Post, Get, Put, Body, UseGuards, Request, ValidationPipe, Query, Version } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { Cache } from '../cache/decorators/cache.decorator';
 
-@Controller('users')
+@Controller({ path: 'users', version: '1' })
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
+  @Throttle({ default: { limit: 3, ttl: 60000 } }) // 3 registrations per minute
   @Post('register')
   async register(@Body(new ValidationPipe()) createUserDto: CreateUserDto) {
     const user = await this.usersService.create(createUserDto);
@@ -16,6 +19,7 @@ export class UsersController {
   }
 
   @UseGuards(JwtAuthGuard)
+  @Cache(300, 'user') // Cache for 5 minutes
   @Get('me')
   async getProfile(@Request() req) {
     const user = await this.usersService.findOneById(req.user.userId);
@@ -45,7 +49,13 @@ export class UsersController {
 
   @UseGuards(JwtAuthGuard)
   @Get('referrals/list')
-  async getReferralList(@Request() req) {
-      return this.usersService.getReferrals(req.user.userId);
+  async getReferralList(
+    @Request() req,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+  ) {
+      const pageNum = page ? parseInt(page, 10) : 1;
+      const limitNum = limit ? parseInt(limit, 10) : 20;
+      return this.usersService.getReferrals(req.user.userId, pageNum, limitNum);
   }
 }

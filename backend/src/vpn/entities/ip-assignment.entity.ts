@@ -1,4 +1,4 @@
-import { Entity, Column, PrimaryGeneratedColumn, ManyToOne, JoinColumn, CreateDateColumn } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, ManyToOne, JoinColumn, CreateDateColumn, Index } from 'typeorm';
 import { User } from '../../users/entities/user.entity';
 import { Server } from '../../locations/entities/server.entity';
 
@@ -10,6 +10,7 @@ export class IpAssignment {
   @Column()
   ipAddress: string; // e.g., 10.100.0.5
 
+  @Index()
   @Column()
   serverId: string;
 
@@ -17,6 +18,7 @@ export class IpAssignment {
   @JoinColumn({ name: 'serverId' })
   server: Server;
 
+  @Index()
   @Column()
   userId: string;
 

@@ -8,7 +8,8 @@ This document defines the auto-discovery and loading mechanism for AI agents acr
 AI IDEs scan for semantic folders at project root:
 ```
 /agents/           ← Primary discovery location
-/docs/            ← Fallback documentation
+/--DOCUMENTATIONS--/ ← Project documentation (NexusVPN)
+/docs/            ← Fallback documentation (generic)
 /config/          ← Configuration files
 ```
 

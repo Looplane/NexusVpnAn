@@ -1,4 +1,4 @@
-import { Controller, Post, Get, Body, Param, UseGuards, Request } from '@nestjs/common';
+import { Controller, Post, Get, Body, Param, UseGuards, Request, Version } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
@@ -6,7 +6,7 @@ import { UserRole } from '../users/entities/user.entity';
 import { ServerDetectionService } from './server-detection.service';
 import { AutoConfigService } from './auto-config.service';
 
-@Controller('admin/server-config')
+@Controller({ path: 'admin/server-config', version: '1' })
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class ServerConfigController {
   constructor(

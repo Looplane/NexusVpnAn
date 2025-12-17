@@ -98,6 +98,19 @@ export class PaymentsService {
       // this.emailService.sendPaymentFailedEmail(...)
   }
 
+  async handleSubscriptionDeleted(subscription: any) {
+    const customerId = subscription.customer;
+    this.logger.log(`Subscription deleted for customer ${customerId}`);
+    
+    // Find user by stripeCustomerId and downgrade to FREE
+    // In production, implement: const user = await this.usersService.findByStripeId(customerId);
+    // if (user) {
+    //   user.plan = UserPlan.FREE;
+    //   await this.usersService.update(user.id, { ...user, password: undefined });
+    //   this.emailService.sendSubscriptionCancelledEmail(user.email);
+    // }
+  }
+
   async getBillingHistory(userId: string) {
       const user = await this.usersService.findOneById(userId);
       
@@ -141,5 +154,35 @@ export class PaymentsService {
           'pro': 'price_pro_456'
       };
       return map[plan] || 'price_basic_123';
+  }
+
+  /**
+   * Construct Stripe event from raw body and signature
+   * This is required for production webhook signature verification
+   */
+  async constructEventFromPayload(
+    rawBody: Buffer | string,
+    signature: string,
+  ): Promise<Stripe.Event> {
+    if (!process.env.STRIPE_WEBHOOK_SECRET) {
+      this.logger.warn('STRIPE_WEBHOOK_SECRET not set, skipping signature verification');
+      // In development, parse as JSON
+      if (typeof rawBody === 'string') {
+        return JSON.parse(rawBody) as Stripe.Event;
+      }
+      throw new Error('STRIPE_WEBHOOK_SECRET not configured');
+    }
+
+    try {
+      const event = this.stripe.webhooks.constructEvent(
+        rawBody,
+        signature,
+        process.env.STRIPE_WEBHOOK_SECRET,
+      );
+      return event;
+    } catch (err) {
+      this.logger.error(`Webhook signature verification failed: ${err.message}`);
+      throw new Error(`Webhook Error: ${err.message}`);
+    }
   }
 }

@@ -1,10 +1,11 @@
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, Index } from 'typeorm';
 
 @Entity('login_history')
 export class LoginHistory {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
+  @Index()
   @Column()
   userId: string;
 
@@ -20,6 +21,7 @@ export class LoginHistory {
   @Column({ default: 'success' })
   status: 'success' | 'failed' | '2fa_challenge';
 
+  @Index()
   @CreateDateColumn()
   timestamp: Date;
 }

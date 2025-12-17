@@ -35,7 +35,7 @@ export class VpnService {
   ) { }
 
   async getUserConfigs(userId: string) {
-    return this.vpnConfigRepository.find({
+    return await this.vpnConfigRepository.find({
       where: { userId },
       order: { createdAt: 'DESC' },
     });

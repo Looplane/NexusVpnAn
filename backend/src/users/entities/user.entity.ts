@@ -1,4 +1,4 @@
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, Index } from 'typeorm';
 
 export enum UserPlan {
   FREE = 'free',
@@ -39,6 +39,7 @@ export class User {
   })
   role: UserRole;
 
+  @Index()
   @Column({ nullable: true })
   stripeCustomerId: string;
 
@@ -56,6 +57,7 @@ export class User {
   @Column({ unique: true, nullable: true })
   referralCode: string;
 
+  @Index()
   @Column({ nullable: true })
   referredBy: string; // ID of the user who referred this user
 

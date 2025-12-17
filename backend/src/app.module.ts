@@ -1,9 +1,15 @@
-import { Module } from '@nestjs/common';
+import { Module, NestModule, MiddlewareConsumer } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ScheduleModule } from '@nestjs/schedule';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
-import { APP_GUARD } from '@nestjs/core';
+import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
+import { RequestIdMiddleware } from './common/middleware/request-id.middleware';
+import { TransformInterceptor } from './common/interceptors/transform.interceptor';
+import { CacheInterceptor } from './cache/interceptors/cache.interceptor';
+import { AppLoggerService } from './common/services/logger.service';
+import { MetricsService } from './common/services/metrics.service';
+import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { UsersModule } from './users/users.module';
@@ -22,6 +28,7 @@ import { HealthModule } from './health/health.module';
 import { MarketingModule } from './marketing/marketing.module';
 import { ServerConfigModule } from './server-config/server-config.module';
 import { DatabaseConfigService } from './database/database-config.service';
+import { CacheModule } from './cache/cache.module';
 
 @Module({
   imports: [
@@ -50,14 +57,32 @@ import { DatabaseConfigService } from './database/database-config.service';
     HealthModule,
     MarketingModule,
     ServerConfigModule,
+    CacheModule,
   ],
   controllers: [AppController],
   providers: [
     AppService,
+    AppLoggerService,
+    MetricsService,
+    HttpExceptionFilter,
     {
       provide: APP_GUARD,
       useClass: ThrottlerGuard,
     },
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: TransformInterceptor,
+    },
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: CacheInterceptor,
+    },
   ],
 })
-export class AppModule { }
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer
+      .apply(RequestIdMiddleware)
+      .forRoutes('*');
+  }
+}

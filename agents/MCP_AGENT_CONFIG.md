@@ -13,7 +13,7 @@ This file contains the agent configuration for managing MCP servers and API key 
 ### Execution Rules
 - **Autonomous Operation**: Follow AGENT_POLICY.md guidelines
 - **Documentation First**: Always create/update documentation before implementation
-- **Project Structure**: Respect existing folder structure (--DOCUMENTATIONS--, My-AGENTS)
+- **Project Structure**: Respect existing folder structure (--DOCUMENTATIONS--, @agents/)
 - **Windows Compatibility**: Ensure all scripts work on Windows (PowerShell/batch)
 
 ## 🚀 Current MCP Status
@@ -55,13 +55,13 @@ This file contains the agent configuration for managing MCP servers and API key 
 ```
 --DOCUMENTATIONS--/
 └── 05-MCP/
-    ├── README.md
-    ├── MCP_API_KEYS_GUIDE.md
-    ├── MCP_QUICK_SETUP.md
-    ├── MCP_INTEGRATION_GUIDE.md
-    ├── MCP_KEYS_ACTION_PLAN.md
-    ├── MCP_SETUP_COMPLETE.md
-    └── FIRECRAWL_INTEGRATION.md
+    ├── 01-MCP-README_17-12-2025_022243.md
+    ├── 13-MCP-MCP_API_KEYS_GUIDE_17-12-2025_024425.md
+    ├── 16-MCP-MCP_QUICK_SETUP_17-12-2025_024425.md
+    ├── 14-MCP-MCP_INTEGRATION_GUIDE_17-12-2025_024425.md
+    ├── 15-MCP-MCP_KEYS_ACTION_PLAN_17-12-2025_024425.md
+    ├── 17-MCP-MCP_SETUP_COMPLETE_17-12-2025_024425.md
+    └── 07-MCP-FIRECRAWL_INTEGRATION_17-12-2025_024425.md
 
 mcp-servers/
 ├── supabase-mcp/
@@ -95,10 +95,13 @@ mcp-scripts/
 
 ## 🔗 Related Files
 
-- **Main Documentation**: `--DOCUMENTATIONS--/05-MCP/`
-- **Agent Policy**: `My-AGENTS/AGENT_POLICY.md`
-- **System Instructions**: `My-AGENTS/SYSTEM_INSTRUCTIONS.json`
-- **Project TODO**: `My-AGENTS/TODO.md`
+- **Main Documentation**: `@--DOCUMENTATIONS--/05-MCP/01-MCP-README_17-12-2025_022243.md`
+- **API Keys Guide**: `@--DOCUMENTATIONS--/05-MCP/13-MCP-MCP_API_KEYS_GUIDE_17-12-2025_024425.md`
+- **Quick Setup**: `@--DOCUMENTATIONS--/05-MCP/16-MCP-MCP_QUICK_SETUP_17-12-2025_024425.md`
+- **Integration Guide**: `@--DOCUMENTATIONS--/05-MCP/14-MCP-MCP_INTEGRATION_GUIDE_17-12-2025_024425.md`
+- **Agent Policy**: `@agents/AGENT_POLICY.md`
+- **System Instructions**: `@agents/SYSTEM_INSTRUCTIONS.json`
+- **Project TODO**: `@agents/TODO.md`
 
 ## 🚨 Important Notes
 

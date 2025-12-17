@@ -1,4 +1,4 @@
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, ManyToOne, JoinColumn } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, ManyToOne, JoinColumn, Index } from 'typeorm';
 import { Ticket } from './ticket.entity';
 
 @Entity('ticket_messages')
@@ -6,6 +6,7 @@ export class TicketMessage {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
+  @Index()
   @Column()
   ticketId: string;
 
@@ -22,6 +23,7 @@ export class TicketMessage {
   @Column({ type: 'text' })
   message: string;
 
+  @Index()
   @CreateDateColumn()
   createdAt: Date;
 }

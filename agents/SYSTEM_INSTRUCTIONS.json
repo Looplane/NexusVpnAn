@@ -15,13 +15,13 @@
         "continuous_execution": true
     },
     "governance_loading": {
-        "root_policy_file": "My-AGENTS/AGENT_POLICY.md",
+        "root_policy_file": "agents/AGENT_POLICY.md",
         "mandatory_files": [
-            "My-AGENTS/AGENTS.md",
-            "My-AGENTS/SPEC.md",
-            "My-AGENTS/NEVER_ASK_SHIM.md",
-            "My-AGENTS/CONTINUATION_RELAY.md",
-            "My-AGENTS/GEMINI_CLAUDE_BRIDGE.md"
+            "agents/AGENTS.md",
+            "agents/SPEC.md",
+            "agents/NEVER_ASK_SHIM.md",
+            "agents/CONTINUATION_RELAY.md",
+            "agents/GEMINI_CLAUDE_BRIDGE.md"
         ]
     },
     "gemini_limit_handling": {

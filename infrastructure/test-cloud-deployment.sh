@@ -172,7 +172,7 @@ else
     echo "1. Check Render logs: Dashboard → Your service → Logs"
     echo "2. Check Vercel logs: Dashboard → Your project → Deployments"
     echo "3. Verify environment variables are set correctly"
-    echo "4. See POST_DEPLOYMENT_GUIDE.md for detailed troubleshooting"
+    echo "4. See --DOCUMENTATIONS--/06-Deployment/04-DEP-Post_Deployment_Guide_17-12-2025_024425.md for detailed troubleshooting"
     exit 1
 fi
 

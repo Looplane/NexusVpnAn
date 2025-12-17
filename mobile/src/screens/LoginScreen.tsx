@@ -11,12 +11,23 @@ export default function LoginScreen({ navigation }: any) {
   const [isLoading, setIsLoading] = useState(false);
 
   const handleLogin = async () => {
+    if (!email || !password) {
+      Alert.alert('Error', 'Please enter email and password');
+      return;
+    }
+
     setIsLoading(true);
     try {
-      await apiClient.login(email, password);
-      navigation.replace('Dashboard');
-    } catch (e) {
-      Alert.alert('Login Failed', 'Please check your credentials.');
+      const result = await apiClient.login(email, password);
+      if (result.requires2fa) {
+        // For 2FA, we'd need a temporary token from the backend
+        // For now, navigate to 2FA screen with email
+        navigation.navigate('TwoFactor', { email });
+      } else {
+        navigation.replace('Dashboard');
+      }
+    } catch (e: any) {
+      Alert.alert('Login Failed', e.message || 'Please check your credentials.');
     } finally {
       setIsLoading(false);
     }
@@ -49,7 +60,11 @@ export default function LoginScreen({ navigation }: any) {
           />
           <Button title="Sign In" onPress={handleLogin} isLoading={isLoading} />
           
-          <Button title="Create Account" onPress={() => {}} variant="outline" />
+          <Button 
+            title="Create Account" 
+            onPress={() => navigation.navigate('Register')} 
+            variant="outline" 
+          />
         </View>
         
         <Text style={styles.footer}>NexusVPN Mobile v1.0</Text>

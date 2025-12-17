@@ -1,4 +1,4 @@
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, ManyToOne, JoinColumn } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, ManyToOne, JoinColumn, Index } from 'typeorm';
 import { User } from '../../users/entities/user.entity';
 
 @Entity('usage_records')
@@ -6,6 +6,7 @@ export class UsageRecord {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
+  @Index()
   @Column()
   userId: string;
 
@@ -19,6 +20,7 @@ export class UsageRecord {
   @Column({ type: 'bigint', default: 0 })
   bytesDownloaded: string;
 
+  @Index(['userId', 'recordDate']) // Composite index for efficient user usage queries
   @Column({ type: 'date' })
   recordDate: string; // YYYY-MM-DD
 
