@@ -33,6 +33,24 @@
         "FIRECRAWL_CREDIT_WARNING_THRESHOLD": "1000",
         "FIRECRAWL_CREDIT_CRITICAL_THRESHOLD": "100"
       }
+    },
+    "github": {
+      "name": "GitHub MCP Server",
+      "description": "MCP server for GitHub repository operations, PR management, and issue tracking",
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-github"],
+      "env": {
+        "GITHUB_PERSONAL_ACCESS_TOKEN": "${GITHUB_TOKEN}"
+      }
+    },
+    "figma": {
+      "name": "Figma MCP Server",
+      "description": "MCP server for Figma design file access and design-to-code workflows",
+      "command": "npx",
+      "args": ["-y", "figma-developer-mcp@0.6.3"],
+      "env": {
+        "FIGMA_API_KEY": "${FIGMA_API_KEY}"
+      }
     }
   }
 }

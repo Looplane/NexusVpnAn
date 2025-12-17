@@ -1,0 +1,497 @@
+---
+alwaysApply: true
+---
+
+# Comprehensive Cursor Rules - NexusVPN Project
+
+**Document ID:** CURSOR-RULES-007  
+**Created:** 17-12-2025 | Time: 13:30:13  
+**Last Updated:** 17-12-2025 | Time: 13:30:13
+
+**Related Documents:**
+- @.cursorrules (1-434) - Main project rules
+- @agents/AGENTS.md (1-19) - Agent roles
+- @agents/AGENT_POLICY.md (1-24) - Agent autonomy rules
+- @agents/SPEC.md (1-38) - Execution spec
+- @agents/TODO.md (1-70) - Task tracking
+- @agents/ROADMAP.md (1-51) - Project roadmap
+- @agents/PHASES.md (1-57) - Development phases
+- @NEXT_STEPS.md (1-375) - Current priorities and action plan
+- @--DOCUMENTATIONS--/00-INDEX-Documentation_Structure_17-12-2025_022243.md (1-197) - Documentation index
+
+---
+
+## Project Overview
+
+### Monorepo Structure
+
+NexusVPN is a monorepo with the following structure:
+
+- **frontend/** - React + Vite application
+- **backend/** - NestJS API server
+- **mobile/** - React Native + Expo app
+- **infrastructure/** - Deployment scripts and configs
+- **mcp-servers/** - MCP server implementations
+- **agents/** - AI agent configurations
+- **--DOCUMENTATIONS--/** - All project documentation
+
+### Current Phase
+
+**Phase 2.5 (Cloud Beta) - Ready for Deployment**  
+**Overall Progress:** ~80% Complete
+
+### Tech Stack
+
+- **Backend**: NestJS, TypeScript, PostgreSQL, TypeORM
+- **Frontend**: React, Vite, Tailwind CSS
+- **Mobile**: React Native, Expo, TypeScript
+- **Database**: PostgreSQL (Supabase for cloud, local for dev)
+- **VPN**: WireGuard
+- **Deployment**: Render (backend), Vercel (frontend), Supabase (database)
+
+---
+
+## Agent System References
+
+### Core Agent Files
+
+All agents must follow these core files:
+
+- **@agents/AGENTS.md** - Agent roles and responsibilities
+- **@agents/AGENT_POLICY.md** - Agent autonomy and execution rules
+- **@agents/SPEC.md** - Execution spec (additive changes only)
+- **@agents/TODO.md** - Task tracking and priorities
+- **@agents/ROADMAP.md** - Project roadmap
+- **@agents/PHASES.md** - Development phases
+- **@agents/MCP_AGENT_CONFIG.md** - MCP server configuration
+- **@agents/README.md** - Agent registry overview
+
+### Specialist Agents
+
+- **@agents/specialists/backend.agent.md** - Backend specialist configuration
+- **@agents/specialists/frontend.agent.md** - Frontend specialist configuration
+- **@agents/specialists/architecture.agent.md** - Architecture specialist configuration
+- **@agents/specialists/version-management.agent.md** - Version management agent
+- **@agents/specialists/compatibility-checking.agent.md** - Compatibility checking agent
+- **@agents/specialists/testing.agent.md** - Testing agent
+
+### Agent Loader
+
+- **@agents/loader/agent.auto-loader.md** - Agent auto-discovery logic
+
+### Agent Roles
+
+**Core Roles:**
+- **Architect**: Defines system structure (Monorepo, NestJS Modules)
+- **Analyzer**: Breaks down TODO.md into actionable steps
+- **Developer**: Implements features (React Components, API Endpoints)
+- **Debugger**: Fixes lint errors, build failures, and runtime bugs
+
+**Specialized Roles:**
+- **Infrastructure Agent**: Manages Docker, WireGuard, and SSH scripts
+- **Mobile Agent**: Handles React Native/Expo specific tasks
+- **UI/UX Expert**: Ensures "Premium SaaS" aesthetic (Tailwind, Animations)
+- **Security Officer**: Audits Auth flows, JWT handling, and Encryption
+- **Version Management Agent**: Manages dependency updates, version compatibility, and security audits
+- **Compatibility Checking Agent**: Verifies dependency compatibility and resolves conflicts
+
+**Documentation Agent:**
+- Updates PHASES.md, ROADMAP.md, and TODO.md after every significant change
+
+---
+
+## Documentation Structure
+
+All documentation must be in @--DOCUMENTATIONS--/ folder:
+
+### Documentation Categories
+
+- **@--DOCUMENTATIONS--/00-INDEX-Documentation_Structure_17-12-2025_022243.md** - Master index
+- **@--DOCUMENTATIONS--/01-Planning/** - Planning and task tracking (5 files)
+- **@--DOCUMENTATIONS--/02-Architecture/** - Architecture documentation (19 files)
+- **@--DOCUMENTATIONS--/03-Logs/** - Session logs and development history (24 files)
+- **@--DOCUMENTATIONS--/04-Guides/** - Deployment and setup guides (2 files)
+- **@--DOCUMENTATIONS--/05-MCP/** - MCP server documentation (26 files including GitHub and Figma)
+- **@--DOCUMENTATIONS--/06-Deployment/** - Deployment guides (33 files)
+- **@--DOCUMENTATIONS--/07-Setup/** - Setup guides (27 files)
+- **@--DOCUMENTATIONS--/08-Fixes/** - Troubleshooting guides (9 files)
+- **@--DOCUMENTATIONS--/09-Status/** - Status reports (7 files)
+- **@--DOCUMENTATIONS--/10-Configuration/** - Configuration templates (4 files including version management)
+
+### File Naming Convention
+
+**Format:** `[Serial]-[Prefix]-[Name]_[DD-MM-YYYY]_[HHmmss].md`
+
+**Prefixes:**
+- `PL-` = Planning
+- `AR-` = Architecture
+- `BE-` = Backend
+- `FE-` = Frontend
+- `MOB-` = Mobile
+- `DEP-` = Deployment
+- `GD-` = Guides
+- `LG-` = Logs
+- `MCP-` = MCP Integration
+- `STAT-` = Status
+- `FIX-` = Fixes
+- `SET-` = Setup
+- `CFG-` = Configuration
+
+**Date Format:**
+- Filename: `DD-MM-YYYY_HHmmss` (e.g., `17-12-2025_021916`)
+- Content: `DD-MM-YYYY | Time: HH:mm:ss` (e.g., `17-12-2025 | Time: 02:19:16`)
+
+### Document Format
+
+Every documentation file must include:
+- Document ID (e.g., BE-STATUS-001)
+- Created/Last Updated with proper date format
+- Agent declaration
+- Related documents with @filename.md (line-range) format
+
+---
+
+## MCP Server Configuration
+
+### Available MCP Servers
+
+**Existing Servers:**
+- **Supabase MCP**: `mcp-servers/supabase-mcp/` - Database operations
+  - Tools: `test_connection`, `query_database`, `get_table_info`
+  - Environment: `SUPABASE_URL`, `SUPABASE_KEY`
+- **Render MCP**: `mcp-servers/render-mcp/` - Deployment operations
+  - Tools: `test_render_connection`, `list_services`, `get_service_info`, `get_service_logs`, `trigger_deploy`, `update_env_vars`
+  - Environment: `RENDER_API_KEY`
+- **Firecrawl MCP**: Web scraping and content extraction
+  - Tools: `scrape_url`, `crawl_site`, `extract_content`, `search_and_scrape`, `analyze_page`, `monitor_credits`
+  - Environment: `FIRECRAWL_API_KEY`
+
+**New Servers:**
+- **GitHub MCP**: GitHub repository operations, PR management, issue tracking
+  - Package: `@modelcontextprotocol/server-github`
+  - Command: `npx -y @modelcontextprotocol/server-github`
+  - Tools: `github_search_repositories`, `github_get_repository`, `github_list_files`, `github_read_file`, `github_create_pull_request`, `github_list_pull_requests`, `github_create_issue`, `github_list_issues`, `github_list_branches`, `github_create_branch`
+  - Environment: `GITHUB_TOKEN` or `GITHUB_PERSONAL_ACCESS_TOKEN`
+  - Documentation: @--DOCUMENTATIONS--/05-MCP/25-MCP-GITHUB_MCP_SETUP_17-12-2025_133013.md
+- **Figma MCP**: Design file access and design-to-code workflows
+  - Package: `figma-developer-mcp@0.6.3` (must use 0.6.3+ for security)
+  - Command: `npx -y figma-developer-mcp@0.6.3`
+  - Tools: `figma_get_file`, `figma_get_file_nodes`, `figma_get_images`, `figma_get_comments`, `figma_get_components`, `figma_get_styles`, `figma_get_variables`, `figma_convert_to_code`
+  - Environment: `FIGMA_API_KEY`
+  - Documentation: @--DOCUMENTATIONS--/05-MCP/26-MCP-FIGMA_MCP_SETUP_17-12-2025_133013.md
+
+### MCP Configuration Files
+
+- **mcp-config.json** - MCP server configuration (includes all 5 servers)
+- **.env.mcp** - Environment variables for MCP servers (template: `.env.mcp.example`)
+- **mcp-scripts/install-mcp.sh** - Installation script for MCP servers
+
+### MCP Documentation
+
+- **Main Guide**: @--DOCUMENTATIONS--/05-MCP/01-MCP-README_17-12-2025_022243.md
+- **API Keys Guide**: @--DOCUMENTATIONS--/05-MCP/13-MCP-MCP_API_KEYS_GUIDE_17-12-2025_024425.md
+- **Quick Setup**: @--DOCUMENTATIONS--/05-MCP/16-MCP-MCP_QUICK_SETUP_17-12-2025_024425.md
+- **Integration Guide**: @--DOCUMENTATIONS--/05-MCP/14-MCP-MCP_INTEGRATION_GUIDE_17-12-2025_024425.md
+- **GitHub Setup**: @--DOCUMENTATIONS--/05-MCP/25-MCP-GITHUB_MCP_SETUP_17-12-2025_133013.md
+- **Figma Setup**: @--DOCUMENTATIONS--/05-MCP/26-MCP-FIGMA_MCP_SETUP_17-12-2025_133013.md
+
+---
+
+## Deployment Configuration
+
+### Backend Deployment
+
+- **Platform**: Render (auto-detects `render.yaml`)
+- **Configuration**: `render.yaml` in project root
+- **Database**: Supabase PostgreSQL (cloud) or local PostgreSQL (dev)
+- **Environment Variables**: Set in Render dashboard
+
+### Frontend Deployment
+
+- **Platform**: Vercel
+- **Configuration**: `vercel.json` in frontend directory
+- **Environment Variables**: `VITE_API_URL` pointing to backend
+
+### Database
+
+- **Cloud**: Supabase PostgreSQL
+- **Local Dev**: PostgreSQL (local installation)
+- **Migrations**: `supabase_migration.sql` for Supabase, `setup_db.sql` for local
+
+### Mobile
+
+- **Platform**: Expo EAS Build
+- **Configuration**: `app.json` in mobile directory
+- **Build**: APK/IPA generation via Expo
+
+### Infrastructure Scripts
+
+- **Location**: `infrastructure/` directory
+- **Key Scripts**: `install.sh`, `deploy-to-cloud.sh`, `setup-supabase-db.sh`
+
+---
+
+## Development Rules
+
+### Core Development Rules
+
+1. **All changes must be additive** - No breaking changes
+2. **Follow NestJS best practices** - Use decorators, DTOs, interceptors
+3. **TypeScript strict mode** - All code must pass strict type checking
+4. **Proper error handling** - Always implement proper error handling and logging
+5. **Security first** - Never commit secrets, use environment variables
+6. **Update documentation** - Keep all docs in @--DOCUMENTATIONS--/ folder
+7. **Use proper file references** - Format: @filename.md (line-range)
+8. **Serialize files** - Use numbered prefixes (01-, 02-, etc.)
+9. **Include timestamps** - Format: DD-MM-YYYY | Time: HH:mm:ss
+
+### Version Management Rules (CRITICAL)
+
+**Always use latest stable versions** of all tools and libraries:
+
+1. **Read official documentation** before implementing any feature
+2. **Check compatibility** between all dependencies before updating
+3. **Update according to official guides** - follow migration guides when available
+4. **Test compatibility** - ensure all tech stack libraries work together without conflicts
+5. **Document version updates** - track all version changes in documentation
+6. **Use dependency management tools** - leverage npm/yarn audit, dependabot, etc.
+7. **Follow semantic versioning** - understand breaking vs non-breaking changes
+8. **Create compatibility matrix** - document tested version combinations
+
+**Before updating any package:**
+1. Check latest stable version from official source
+2. Review breaking changes in changelog
+3. Verify compatibility with other dependencies
+4. Check migration guides if available
+5. Test in development environment first
+
+**Documentation:**
+- **Version Management Guide**: @--DOCUMENTATIONS--/10-Configuration/03-CFG-VERSION_MANAGEMENT_GUIDE_17-12-2025_133013.md
+- **Compatibility Matrix**: @--DOCUMENTATIONS--/10-Configuration/04-CFG-COMPATIBILITY_MATRIX_17-12-2025_133013.md
+
+### Tech Stack Documentation Requirements
+
+Always refer to official documentation when working with these technologies:
+
+- **NestJS**: https://docs.nestjs.com
+- **React**: https://react.dev
+- **React Native/Expo**: https://docs.expo.dev
+- **TypeScript**: https://www.typescriptlang.org/docs
+- **PostgreSQL**: https://www.postgresql.org/docs
+- **WireGuard**: https://www.wireguard.com
+- **MCP Protocol**: Reference `agents/_standards/anthropic-mcp.md`
+
+---
+
+## File Naming Conventions
+
+### Documentation Files
+
+**Format:** `[Serial]-[Prefix]-[Name]_[DD-MM-YYYY]_[HHmmss].md`
+
+**Example:** `01-BE-Production_Status_17-12-2025_021916.md`
+
+**Date Format:**
+- Filename: `DD-MM-YYYY_HHmmss` (e.g., `17-12-2025_021916`)
+- Content: `DD-MM-YYYY | Time: HH:mm:ss` (e.g., `17-12-2025 | Time: 02:19:16`)
+
+### Code Files
+
+- Follow standard naming conventions for each language
+- TypeScript: PascalCase for classes, camelCase for functions
+- React: PascalCase for components
+- NestJS: Follow NestJS naming conventions
+
+---
+
+## Code References
+
+### Documentation References
+
+Use `@filename.md (line-range)` format for documentation:
+
+**Examples:**
+- `@--DOCUMENTATIONS--/02-Architecture/BACKEND/01-Status/01-BE-Production_Status_17-12-2025_021916.md (1-125)`
+- `@agents/AGENTS.md (1-19)`
+- `@NEXT_STEPS.md (1-50)`
+
+### Code References
+
+Use `@path/to/file.ts (line-range)` format for code files:
+
+**Examples:**
+- `@backend/src/main.ts (11-88)`
+- `@frontend/src/App.tsx (1-50)`
+- `@mobile/src/screens/LoginScreen.tsx (1-100)`
+
+---
+
+## Security Rules
+
+1. **Never commit secrets** - Use environment variables
+2. **Validate all inputs** - Use DTOs and validation decorators
+3. **Sanitize user data** - Prevent XSS and injection attacks
+4. **Use HTTPS** - Always in production
+5. **Rate limiting** - Implement for API endpoints
+6. **CORS configuration** - Restrict to known origins
+7. **JWT security** - Use strong secrets, proper expiration
+8. **MCP server security** - Never expose API keys, use environment variables
+9. **Figma MCP security** - Always use version 0.6.3+ to avoid CVE-2025-53967
+
+---
+
+## Performance Rules
+
+1. **Database queries** - Use indexes, avoid N+1 queries
+2. **API responses** - Implement pagination for large datasets
+3. **Caching** - Use Redis or in-memory cache where appropriate
+4. **Code splitting** - Lazy load components in frontend
+5. **Asset optimization** - Compress images, minify code
+
+---
+
+## Error Handling Rules
+
+1. **Global exception filter** - Catch all unhandled errors
+2. **Logging** - Log all errors with context
+3. **User-friendly messages** - Don't expose technical details to users
+4. **Error recovery** - Implement retry logic where appropriate
+5. **Monitoring** - Track errors in production
+
+---
+
+## Code Style Rules
+
+1. **TypeScript** - Use strict mode, avoid `any`
+2. **Naming** - Use descriptive names, follow conventions
+3. **Comments** - Document complex logic, not obvious code
+4. **Formatting** - Use Prettier/ESLint configuration
+5. **Imports** - Organize imports (external, internal, relative)
+
+---
+
+## Git Workflow Rules
+
+1. **Branch naming** - Use descriptive branch names
+2. **Commit messages** - Clear, descriptive commit messages
+3. **Pull requests** - Include description and testing notes
+4. **Code review** - Review before merging
+5. **Documentation** - Update docs with code changes
+
+---
+
+## Cursor IDE Setup
+
+### Project Rules Files
+
+Add these files to Cursor IDE → Settings → Rules and Commands → Project Rules:
+
+**Core Rules (Essential - Add First):**
+1. `.cursorrules` - Main project rules
+2. `agents/AGENTS.md` - Agent roles and responsibilities
+3. `agents/AGENT_POLICY.md` - Agent autonomy and execution rules
+4. `agents/SPEC.md` - Execution spec (additive changes only)
+5. `agents/TODO.md` - Task tracking and priorities
+
+**Agent Configuration (Important - Add These):**
+6. `agents/MCP_AGENT_CONFIG.md` - MCP server configuration
+7. `agents/ROADMAP.md` - Project roadmap
+8. `agents/PHASES.md` - Development phases
+9. `agents/README.md` - Agent registry overview
+10. `agents/specialists/backend.agent.md` - Backend specialist configuration
+11. `agents/specialists/frontend.agent.md` - Frontend specialist configuration
+12. `agents/specialists/architecture.agent.md` - Architecture specialist configuration
+13. `agents/specialists/version-management.agent.md` - Version management agent
+14. `agents/specialists/compatibility-checking.agent.md` - Compatibility checking agent
+15. `agents/loader/agent.auto-loader.md` - Agent auto-discovery logic
+
+**Documentation Index (Reference - Add These):**
+16. `--DOCUMENTATIONS--/00-INDEX-Documentation_Structure_17-12-2025_022243.md` - Documentation index
+17. `--DOCUMENTATIONS--/01-Planning/02-PL-Task_Tracker_17-12-2025_022243.md` - Project task tracking
+18. `--DOCUMENTATIONS--/02-Architecture/01-AR-API_Schema_17-12-2025_022243.md` - API specifications
+19. `--DOCUMENTATIONS--/02-Architecture/02-AR-System_Architecture_17-12-2025_022243.md` - System architecture
+20. `--DOCUMENTATIONS--/10-Configuration/03-CFG-VERSION_MANAGEMENT_GUIDE_17-12-2025_133013.md` - Version management guide
+21. `--DOCUMENTATIONS--/10-Configuration/04-CFG-COMPATIBILITY_MATRIX_17-12-2025_133013.md` - Compatibility matrix
+
+**MCP Documentation (Reference - Add These):**
+22. `--DOCUMENTATIONS--/05-MCP/01-MCP-README_17-12-2025_022243.md` - MCP overview
+23. `--DOCUMENTATIONS--/05-MCP/25-MCP-GITHUB_MCP_SETUP_17-12-2025_133013.md` - GitHub MCP setup
+24. `--DOCUMENTATIONS--/05-MCP/26-MCP-FIGMA_MCP_SETUP_17-12-2025_133013.md` - Figma MCP setup
+
+### MCP Server Configuration in Cursor
+
+The MCP servers are configured in `mcp-config.json`. Cursor IDE will automatically detect and use these servers when configured in Cursor settings.
+
+**Configuration Location:** `mcp-config.json` in project root
+
+**Environment Variables:** `.env.mcp` (not committed to git)
+
+---
+
+## Next Steps Reference
+
+**Current Priorities:** @NEXT_STEPS.md
+
+**Key Priorities:**
+1. Cloud Deployment (High Priority - Manual Steps)
+2. Email Service Implementation (Medium Priority)
+3. Real Speed Test Implementation (Medium Priority)
+4. Complete Pending Invites Calculation (Low Priority)
+
+---
+
+## Quick Reference
+
+### Agent Commands
+
+**Backend Development:**
+```
+@backend-nexusvpn-specialist: [Your task]
+CONTEXT: [Background information]
+PRIORITY: [Speed/Quality/Security]
+OUTPUT: [Expected result]
+```
+
+**Frontend Development:**
+```
+@frontend-nexusvpn-specialist: [Your task]
+CONTEXT: [Background information]
+PRIORITY: [Speed/Quality/Security]
+OUTPUT: [Expected result]
+```
+
+**Version Management:**
+```
+@version-management-nexusvpn: Check for outdated packages
+CONTEXT: [Which project: backend/frontend/mobile]
+PRIORITY: [Security/Quality]
+OUTPUT: [List of outdated packages with compatibility check]
+```
+
+**Compatibility Checking:**
+```
+@compatibility-checking-nexusvpn: Verify dependency compatibility
+CONTEXT: [Package name and version]
+PRIORITY: [Quality]
+OUTPUT: [Compatibility report]
+```
+
+### MCP Commands
+
+**GitHub MCP:**
+```
+Use GitHub MCP tool: github_search_repositories
+QUERY: [Search query]
+CONTEXT: [What you need to find]
+```
+
+**Figma MCP:**
+```
+Use Figma MCP tool: figma_get_file
+FILE_KEY: [Figma file key]
+CONTEXT: [What you need from the file]
+```
+
+---
+
+**Last Updated:** 17-12-2025 | Time: 13:30:13

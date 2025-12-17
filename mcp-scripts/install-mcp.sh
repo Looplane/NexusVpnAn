@@ -61,6 +61,15 @@ SUPABASE_SERVICE_KEY=your-supabase-service-key
 # Render Configuration  
 RENDER_API_KEY=your-render-api-key
 RENDER_SERVICE_ID=your-render-service-id
+
+# GitHub Configuration
+# Get your token from: https://github.com/settings/tokens
+# Required scopes: repo, read:org, read:user
+GITHUB_TOKEN=your-github-personal-access-token
+
+# Figma Configuration
+# Get your API key from: https://www.figma.com/developers/api#access-tokens
+FIGMA_API_KEY=your-figma-api-key
 EOF
 
 echo "📝 Environment template created at .env.mcp.example"
@@ -96,12 +105,20 @@ EOF
 
 echo "✨ MCP configuration created at mcp-config.json"
 
+# Note about GitHub and Figma MCP servers
+echo ""
+echo "📦 Note: GitHub and Figma MCP servers use npx and will be installed on first use"
+echo "   They don't require separate installation steps."
+echo ""
+
 echo ""
 echo "🎉 MCP servers setup complete!"
 echo ""
 echo "Next steps:"
 echo "1. Copy .env.mcp.example to .env.mcp and update with your credentials"
-echo "2. Test the servers with: npm run test-mcp"
-echo "3. Start development mode with: ./mcp-scripts/dev-mcp.sh"
+echo "2. Get GitHub token from: https://github.com/settings/tokens (scopes: repo, read:org, read:user)"
+echo "3. Get Figma API key from: https://www.figma.com/developers/api#access-tokens"
+echo "4. Test the servers with: npm run test-mcp"
+echo "5. Start development mode with: ./mcp-scripts/dev-mcp.sh"
 echo ""
 echo "For IDE integration, use the mcp-config.json file with your preferred editor."

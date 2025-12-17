@@ -89,26 +89,70 @@ export class PaymentsService {
     }
   }
 
+  /**
+   * Handle payment failed webhook event
+   * 
+   * When a payment fails, we should:
+   * 1. Find the user by Stripe customer ID
+   * 2. Log the failure
+   * 3. Send notification email
+   * 4. Optionally downgrade after grace period (not implemented yet)
+   * 
+   * @param invoice - Stripe invoice object from webhook
+   * 
+   * @fix Implemented user lookup and email notification
+   */
   async handlePaymentFailed(invoice: any) {
-      // Logic for failed payment
       const customerId = invoice.customer;
-      // In a real app, find user by stripeCustomerId
-      // const user = await this.usersService.findByStripeId(customerId);
-      this.logger.warn(`Payment failed for customer ${customerId}. Consider downgrading or notifying.`);
-      // this.emailService.sendPaymentFailedEmail(...)
+      
+      // Find user by Stripe customer ID
+      const user = await this.usersService.findByStripeId(customerId);
+      
+      if (user) {
+        this.logger.warn(`Payment failed for user ${user.id} (${user.email}). Customer: ${customerId}`);
+        
+      // Send payment failed notification email
+      this.emailService.sendPaymentFailedEmail(user.email, invoice.amount_due / 100); // Convert cents to dollars
+        
+        // TODO: Implement grace period logic
+        // After X failed attempts, downgrade to FREE plan
+        // For now, just log the failure
+      } else {
+        this.logger.warn(`Payment failed for unknown customer ${customerId}`);
+      }
   }
 
+  /**
+   * Handle subscription deleted webhook event
+   * 
+   * When a subscription is cancelled/deleted:
+   * 1. Find the user by Stripe customer ID
+   * 2. Downgrade user to FREE plan
+   * 3. Send cancellation confirmation email
+   * 
+   * @param subscription - Stripe subscription object from webhook
+   * 
+   * @fix Implemented user lookup, plan downgrade, and email notification
+   */
   async handleSubscriptionDeleted(subscription: any) {
     const customerId = subscription.customer;
     this.logger.log(`Subscription deleted for customer ${customerId}`);
     
     // Find user by stripeCustomerId and downgrade to FREE
-    // In production, implement: const user = await this.usersService.findByStripeId(customerId);
-    // if (user) {
-    //   user.plan = UserPlan.FREE;
-    //   await this.usersService.update(user.id, { ...user, password: undefined });
-    //   this.emailService.sendSubscriptionCancelledEmail(user.email);
-    // }
+    const user = await this.usersService.findByStripeId(customerId);
+    
+    if (user) {
+      // Downgrade to FREE plan
+      user.plan = UserPlan.FREE;
+      await this.usersService.update(user.id, { ...user, password: undefined });
+      
+      this.logger.log(`User ${user.id} downgraded to FREE plan after subscription cancellation`);
+      
+      // Send cancellation confirmation email
+      this.emailService.sendSubscriptionCancelledEmail(user.email);
+    } else {
+      this.logger.warn(`Subscription deleted for unknown customer ${customerId}`);
+    }
   }
 
   async getBillingHistory(userId: string) {
@@ -134,18 +178,27 @@ export class PaymentsService {
           ];
       }
 
-      // Real Stripe implementation would go here
-      // const invoices = await this.stripe.invoices.list({ customer: user.stripeCustomerId });
-      // return invoices.data.map(inv => ({
-      //     id: inv.id,
-      //     date: new Date(inv.created * 1000).toISOString().split('T')[0],
-      //     amount: inv.amount_paid,
-      //     status: inv.status === 'paid' ? 'paid' : 'pending',
-      //     planName: inv.metadata?.plan || 'Unknown',
-      //     pdfUrl: inv.invoice_pdf || '#',
-      // }));
-      
-      return [];
+      // Real Stripe implementation
+      // @fix Implemented real Stripe invoice fetching
+      try {
+        const invoices = await this.stripe.invoices.list({ 
+          customer: user.stripeCustomerId,
+          limit: 50, // Get last 50 invoices
+        });
+        
+        return invoices.data.map(inv => ({
+          id: inv.id,
+          date: new Date(inv.created * 1000).toISOString().split('T')[0],
+          amount: inv.amount_paid,
+          status: inv.status === 'paid' ? 'paid' : inv.status === 'open' ? 'pending' : 'failed',
+          planName: inv.metadata?.plan || inv.subscription_details?.metadata?.plan || 'Unknown',
+          pdfUrl: inv.invoice_pdf || undefined,
+        }));
+      } catch (error) {
+        this.logger.error(`Failed to fetch billing history from Stripe: ${error.message}`);
+        // Return empty array on error
+        return [];
+      }
   }
 
   private getPriceIdForPlan(plan: string) {

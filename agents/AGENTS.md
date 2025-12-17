@@ -11,6 +11,8 @@
 - **Mobile Agent:** Handles React Native/Expo specific tasks.
 - **UI/UX Expert:** Ensures "Premium SaaS" aesthetic (Tailwind, Animations).
 - **Security Officer:** Audits Auth flows, JWT handling, and Encryption.
+- **Version Management Agent:** Manages dependency updates, version compatibility, and security audits.
+- **Compatibility Checking Agent:** Verifies dependency compatibility and resolves conflicts.
 
 ## 📝 Documentation Agent
 - Updates `PHASES.md`, `ROADMAP.md`, and `TODO.md` after every significant change.

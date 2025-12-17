@@ -72,6 +72,14 @@ export class UsersController {
    * @fix Added null check to prevent undefined access errors
    * @todo Implement pendingInvites calculation
    */
+  /**
+   * Get referral statistics for current user
+   * 
+   * @returns Referral statistics (total invited, credits earned, referral code, pending invites)
+   * @throws NotFoundException if user doesn't exist
+   * 
+   * @fix Added pendingInvites calculation using new getPendingInvitesCount method
+   */
   @UseGuards(JwtAuthGuard)
   @Get('referrals')
   async getReferralStats(@Request() req) {
@@ -79,11 +87,15 @@ export class UsersController {
       if (!user) {
         throw new NotFoundException('User not found');
       }
+      
+      // Calculate pending invites
+      const pendingInvites = await this.usersService.getPendingInvitesCount(req.user.userId);
+      
       return {
           totalInvited: user.referralCount,
           totalEarned: user.credits,
           referralCode: user.referralCode,
-          pendingInvites: 0 // Placeholder logic for now - TODO: Calculate from pending registrations
+          pendingInvites
       };
   }
 

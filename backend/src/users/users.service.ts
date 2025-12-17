@@ -89,6 +89,47 @@ export class UsersService {
     return this.usersRepository.findOne({ where: { id } });
   }
 
+  /**
+   * Find user by Stripe customer ID
+   * Used for webhook handlers to identify users from Stripe events
+   * 
+   * @param stripeCustomerId - Stripe customer ID
+   * @returns User entity or undefined
+   */
+  async findByStripeId(stripeCustomerId: string): Promise<User | undefined> {
+    return this.usersRepository.findOne({ where: { stripeCustomerId } });
+  }
+
+  /**
+   * Get pending referral invites count
+   * Calculates users who registered with a referral code but haven't completed setup
+   * 
+   * @param userId - User ID to check referrals for
+   * @returns Count of pending invites
+   * 
+   * @todo Implement actual pending invites calculation
+   * Currently returns 0 as placeholder - should query for users with referralCode
+   * who haven't completed profile setup or are in pending state
+   */
+  async getPendingInvitesCount(userId: string): Promise<number> {
+    const user = await this.findOneById(userId);
+    if (!user || !user.referralCode) {
+      return 0;
+    }
+    
+    // TODO: Implement actual pending invites calculation
+    // Query for users who registered with this referralCode but haven't completed setup
+    // const pendingUsers = await this.usersRepository.count({
+    //   where: {
+    //     referredBy: user.referralCode,
+    //     isActive: false, // or some pending status
+    //   }
+    // });
+    // return pendingUsers;
+    
+    return 0; // Placeholder
+  }
+
   async update(id: string, updateUserDto: UpdateUserDto): Promise<User> {
     const user = await this.findOneById(id);
     if (!user) {
