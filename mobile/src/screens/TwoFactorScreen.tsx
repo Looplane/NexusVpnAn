@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState } from 'react';
 import { View, Text, StyleSheet, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button, Input } from '../components/UI';
@@ -6,7 +6,7 @@ import { apiClient } from '../services/apiClient';
 import { Shield } from 'lucide-react-native';
 
 export default function TwoFactorScreen({ navigation, route }: any) {
-  const { token, email } = route.params || {};
+  const { email, password } = route.params || {};
   const [code, setCode] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
@@ -16,17 +16,16 @@ export default function TwoFactorScreen({ navigation, route }: any) {
       return;
     }
 
+    if (!email || !password) {
+      Alert.alert('Error', 'Missing credentials. Please try logging in again.');
+      navigation.goBack();
+      return;
+    }
+
     setIsLoading(true);
     try {
-      // If we have a token, use it; otherwise we'd need to re-authenticate
-      if (token) {
-        await apiClient.verify2FA(token, code);
-        navigation.replace('Dashboard');
-      } else {
-        // For now, show error - in production, backend would handle this flow
-        Alert.alert('Error', '2FA verification requires backend support');
-        navigation.goBack();
-      }
+      await apiClient.verify2FA(email, password, code);
+      navigation.replace('Dashboard');
     } catch (e: any) {
       Alert.alert('Verification Failed', e.message || 'Invalid code. Please try again.');
       setCode('');

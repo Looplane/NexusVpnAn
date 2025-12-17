@@ -23,11 +23,17 @@ export class LoggingInterceptor implements NestInterceptor {
     const now = Date.now();
 
     // Build log context
+    const requestIdHeader = headers['x-request-id'];
+    const forwardedFor = headers['x-forwarded-for'];
+    const ipValue = ip || 
+      (typeof forwardedFor === 'string' ? forwardedFor : Array.isArray(forwardedFor) ? forwardedFor[0] : 'unknown') || 
+      'unknown';
+    
     const logContext: LogContext = {
-      requestId: request.id || headers['x-request-id'],
+      requestId: typeof requestIdHeader === 'string' ? requestIdHeader : Array.isArray(requestIdHeader) ? requestIdHeader[0] : undefined,
       userId: request.user?.userId,
-      ip: ip || headers['x-forwarded-for'] || 'unknown',
-      userAgent: headers['user-agent'],
+      ip: ipValue,
+      userAgent: typeof headers['user-agent'] === 'string' ? headers['user-agent'] : undefined,
       method,
       url,
     };

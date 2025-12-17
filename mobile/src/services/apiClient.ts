@@ -71,20 +71,32 @@ export const apiClient = {
     }
   },
 
-  verify2FA: async (token: string, code: string) => {
+  verify2FA: async (email: string, password: string, code: string) => {
     try {
-      const res = await fetch(`${API_URL}/auth/verify-2fa`, {
+      // Backend login endpoint accepts code parameter for 2FA verification
+      const res = await fetch(`${API_URL}/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token, code })
+        body: JSON.stringify({ email, password, code })
       });
 
       const data = await handleResponse(res);
-      if (data.accessToken) {
-        await SecureStore.setItemAsync('nexus_token', data.accessToken);
-        await SecureStore.setItemAsync('nexus_user', JSON.stringify(data.user || {}));
+      
+      // Check if 2FA is still required (shouldn't happen with valid code, but handle edge case)
+      if (data.requires2fa) {
+        throw new Error('2FA verification still required. Please check your code.');
       }
-      return data;
+      
+      // Ensure we have a token before storing
+      if (data.accessToken || data.access_token) {
+        const token = data.accessToken || data.access_token;
+        await SecureStore.setItemAsync('nexus_token', token);
+        await SecureStore.setItemAsync('nexus_user', JSON.stringify(data.user || {}));
+        return { success: true, user: data.user };
+      }
+      
+      // If no token, something went wrong
+      throw new Error('Authentication failed: No access token received');
     } catch (e: any) {
       console.error('2FA Error:', e);
       throw new Error(e.message || '2FA verification failed');

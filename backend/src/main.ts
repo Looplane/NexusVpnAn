@@ -35,6 +35,11 @@ async function bootstrap() {
   // Compression
   app.use(compression());
 
+  // Trust proxy for correct IP handling behind reverse proxies (Render, Nginx, etc.)
+  // This ensures request.ip correctly extracts from X-Forwarded-For header
+  const expressApp = app.getHttpAdapter().getInstance();
+  expressApp.set('trust proxy', true);
+
   // CORS - Handle Production Domains
   const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
   app.enableCors({

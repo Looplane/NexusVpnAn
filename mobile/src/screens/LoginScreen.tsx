@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ImageBackground, Image, Alert } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { View, Text, StyleSheet, Alert } from 'react-native';
 import { Button, Input } from '../components/UI';
 import { apiClient } from '../services/apiClient';
 import { Shield } from 'lucide-react-native';
@@ -20,9 +19,8 @@ export default function LoginScreen({ navigation }: any) {
     try {
       const result = await apiClient.login(email, password);
       if (result.requires2fa) {
-        // For 2FA, we'd need a temporary token from the backend
-        // For now, navigate to 2FA screen with email
-        navigation.navigate('TwoFactor', { email });
+        // Navigate to 2FA screen with email and password for verification
+        navigation.navigate('TwoFactor', { email, password });
       } else {
         navigation.replace('Dashboard');
       }
