@@ -1,3 +1,19 @@
+/**
+ * Logging Interceptor
+ * 
+ * Intercepts all HTTP requests and responses to provide comprehensive logging and metrics.
+ * Records request duration, status codes, and error information for monitoring and debugging.
+ * 
+ * Features:
+ * - Logs all requests with full context (IP, user agent, request ID, etc.)
+ * - Records performance metrics (duration, status codes)
+ * - Detects and warns about slow requests (>1000ms)
+ * - Handles both successful and error responses
+ * - Properly extracts IP from X-Forwarded-For header for proxy environments
+ * 
+ * @fix Improved IP extraction logic to handle string/array types from headers
+ * @fix Added proper type handling for request ID and user agent headers
+ */
 import {
   Injectable,
   NestInterceptor,
@@ -22,12 +38,23 @@ export class LoggingInterceptor implements NestInterceptor {
     const { method, url, ip, headers } = request;
     const now = Date.now();
 
-    // Build log context
+    // Build log context with proper type handling
+    // Extract headers that may be string, array, or undefined
     const requestIdHeader = headers['x-request-id'];
     const forwardedFor = headers['x-forwarded-for'];
-    const ipValue = ip || 
-      (typeof forwardedFor === 'string' ? forwardedFor : Array.isArray(forwardedFor) ? forwardedFor[0] : 'unknown') || 
-      'unknown';
+    
+    // Extract IP address with fallback logic
+    // Priority: request.ip (from Express trust proxy) -> X-Forwarded-For header -> 'unknown'
+    // @fix Improved IP extraction to handle both string and array types from X-Forwarded-For header
+    let ipValue = ip || 'unknown';
+    if (!ipValue || ipValue === 'unknown') {
+      if (typeof forwardedFor === 'string') {
+        ipValue = forwardedFor || 'unknown';
+      } else if (Array.isArray(forwardedFor) && forwardedFor.length > 0) {
+        // Take first IP from array (first is usually the original client IP)
+        ipValue = forwardedFor[0] || 'unknown';
+      }
+    }
     
     const logContext: LogContext = {
       requestId: typeof requestIdHeader === 'string' ? requestIdHeader : Array.isArray(requestIdHeader) ? requestIdHeader[0] : undefined,

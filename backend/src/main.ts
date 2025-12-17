@@ -35,8 +35,10 @@ async function bootstrap() {
   // Compression
   app.use(compression());
 
-  // Trust proxy for correct IP handling behind reverse proxies (Render, Nginx, etc.)
+  // Trust proxy for correct IP handling behind reverse proxies (Render, Nginx, Cloudflare, etc.)
   // This ensures request.ip correctly extracts from X-Forwarded-For header
+  // Required for accurate IP logging and rate limiting when deployed behind a proxy
+  // @fix Added trust proxy configuration for production deployments
   const expressApp = app.getHttpAdapter().getInstance();
   expressApp.set('trust proxy', true);
 

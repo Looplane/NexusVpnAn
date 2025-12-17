@@ -1,4 +1,20 @@
-import { Controller, Post, Get, Put, Body, UseGuards, Request, ValidationPipe, Query, Version } from '@nestjs/common';
+/**
+ * Users Controller
+ * 
+ * Handles user registration, profile management, and referral operations.
+ * All endpoints (except register) require JWT authentication.
+ * 
+ * Features:
+ * - User registration with rate limiting (3 per minute)
+ * - Profile retrieval and updates
+ * - Referral statistics and listing
+ * - Automatic password hash exclusion from responses
+ * - Response caching for profile endpoints
+ * 
+ * @fix Added NotFoundException handling for getProfile and getReferralStats
+ * @fix Added proper null checks before accessing user properties
+ */
+import { Controller, Post, Get, Put, Body, UseGuards, Request, ValidationPipe, Query, Version, NotFoundException } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -18,11 +34,23 @@ export class UsersController {
     return result;
   }
 
+  /**
+   * Get current user's profile
+   * 
+   * @returns User profile (password hash excluded)
+   * @throws NotFoundException if user doesn't exist (shouldn't happen with valid JWT)
+   * 
+   * @fix Added null check to prevent undefined access errors
+   */
   @UseGuards(JwtAuthGuard)
   @Cache(300, 'user') // Cache for 5 minutes
   @Get('me')
   async getProfile(@Request() req) {
     const user = await this.usersService.findOneById(req.user.userId);
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+    // Exclude password hash from response for security
     const { passwordHash, ...result } = user;
     return result;
   }
@@ -35,15 +63,27 @@ export class UsersController {
     return result;
   }
 
+  /**
+   * Get referral statistics for current user
+   * 
+   * @returns Referral statistics (total invited, credits earned, referral code)
+   * @throws NotFoundException if user doesn't exist
+   * 
+   * @fix Added null check to prevent undefined access errors
+   * @todo Implement pendingInvites calculation
+   */
   @UseGuards(JwtAuthGuard)
   @Get('referrals')
   async getReferralStats(@Request() req) {
       const user = await this.usersService.findOneById(req.user.userId);
+      if (!user) {
+        throw new NotFoundException('User not found');
+      }
       return {
           totalInvited: user.referralCount,
           totalEarned: user.credits,
           referralCode: user.referralCode,
-          pendingInvites: 0 // Placeholder logic for now
+          pendingInvites: 0 // Placeholder logic for now - TODO: Calculate from pending registrations
       };
   }
 

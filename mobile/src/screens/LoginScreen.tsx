@@ -1,3 +1,19 @@
+/**
+ * Login Screen Component
+ * 
+ * Handles user authentication with email and password.
+ * Supports 2FA flow by navigating to TwoFactorScreen when required.
+ * 
+ * Features:
+ * - Email and password validation
+ * - Loading state management
+ * - Error handling with user-friendly alerts
+ * - Automatic navigation to 2FA screen when required
+ * - Navigation to dashboard on successful login
+ * 
+ * @fix Removed unused imports (ImageBackground, Image, SafeAreaView)
+ * @fix Updated to pass both email and password to 2FA screen for verification
+ */
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, Alert } from 'react-native';
 import { Button, Input } from '../components/UI';
@@ -20,8 +36,11 @@ export default function LoginScreen({ navigation }: any) {
       const result = await apiClient.login(email, password);
       if (result.requires2fa) {
         // Navigate to 2FA screen with email and password for verification
+        // @fix Updated to pass both email and password (previously only passed email)
+        // Password is needed for the second login attempt with 2FA code
         navigation.navigate('TwoFactor', { email, password });
       } else {
+        // Successful login without 2FA - navigate to dashboard
         navigation.replace('Dashboard');
       }
     } catch (e: any) {

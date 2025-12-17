@@ -1,3 +1,20 @@
+/**
+ * Two-Factor Authentication Screen Component
+ * 
+ * Handles 2FA code verification for users with two-factor authentication enabled.
+ * Validates 6-digit codes and completes the authentication process.
+ * 
+ * Features:
+ * - 6-digit code input with numeric-only validation
+ * - Real-time code formatting (numbers only, max 6 digits)
+ * - Credential validation before submission
+ * - Error handling with user-friendly messages
+ * - Automatic navigation to dashboard on success
+ * 
+ * @fix Removed unused useRef import
+ * @fix Updated to use email/password instead of non-existent token parameter
+ * @fix Added credential validation before attempting verification
+ */
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -16,6 +33,8 @@ export default function TwoFactorScreen({ navigation, route }: any) {
       return;
     }
 
+    // Validate credentials are present before attempting verification
+    // @fix Added credential validation to prevent errors from missing route params
     if (!email || !password) {
       Alert.alert('Error', 'Missing credentials. Please try logging in again.');
       navigation.goBack();
@@ -24,10 +43,15 @@ export default function TwoFactorScreen({ navigation, route }: any) {
 
     setIsLoading(true);
     try {
+      // Verify 2FA code using email, password, and code
+      // @fix Updated to use correct verify2FA signature (email, password, code)
+      // Previously tried to use non-existent token parameter
       await apiClient.verify2FA(email, password, code);
+      // Successful verification - navigate to dashboard
       navigation.replace('Dashboard');
     } catch (e: any) {
       Alert.alert('Verification Failed', e.message || 'Invalid code. Please try again.');
+      // Clear code input on error for better UX
       setCode('');
     } finally {
       setIsLoading(false);

@@ -1,3 +1,19 @@
+/**
+ * Global HTTP Exception Filter
+ * 
+ * Catches all exceptions thrown by the application and formats them into consistent HTTP responses.
+ * Provides comprehensive logging with request context for debugging and monitoring.
+ * 
+ * Features:
+ * - Handles both HttpException and generic Error instances
+ * - Extracts and logs request context (IP, user agent, request ID, etc.)
+ * - Differentiates between server errors (500+) and client errors (400-499)
+ * - Hides stack traces in production for security
+ * - Properly handles X-Forwarded-For header for accurate IP extraction behind proxies
+ * 
+ * @fix Fixed variable shadowing issue (error -> errorInstance)
+ * @fix Improved IP extraction logic to handle string/array types from headers
+ */
 import {
   ExceptionFilter,
   Catch,
@@ -37,12 +53,23 @@ export class HttpExceptionFilter implements ExceptionFilter {
       error = exception.name;
     }
 
-    // Build log context
+    // Build log context with proper type handling
+    // Extract request ID from header (can be string, array, or undefined)
     const requestIdHeader = request.headers['x-request-id'];
     const forwardedFor = request.headers['x-forwarded-for'];
-    const ipValue = request.ip || 
-      (typeof forwardedFor === 'string' ? forwardedFor : Array.isArray(forwardedFor) ? forwardedFor[0] : 'unknown') || 
-      'unknown';
+    
+    // Extract IP address with fallback logic
+    // Priority: request.ip (from Express trust proxy) -> X-Forwarded-For header -> 'unknown'
+    // @fix Improved IP extraction to handle both string and array types from X-Forwarded-For header
+    let ipValue = request.ip || 'unknown';
+    if (!ipValue || ipValue === 'unknown') {
+      if (typeof forwardedFor === 'string') {
+        ipValue = forwardedFor || 'unknown';
+      } else if (Array.isArray(forwardedFor) && forwardedFor.length > 0) {
+        // Take first IP from array (first is usually the original client IP)
+        ipValue = forwardedFor[0] || 'unknown';
+      }
+    }
     
     const logContext: LogContext = {
       requestId: typeof requestIdHeader === 'string' ? requestIdHeader : Array.isArray(requestIdHeader) ? requestIdHeader[0] : undefined,
@@ -53,13 +80,14 @@ export class HttpExceptionFilter implements ExceptionFilter {
       url: request.url,
     };
 
-    // Log based on severity
+    // Log based on severity level
     if (status >= 500) {
-      // Server errors - log full error details
-      const error = exception instanceof Error ? exception : new Error(String(exception));
-      this.logger.logError(error, logContext);
+      // Server errors (500+) - log full error details for debugging
+      // @fix Renamed 'error' to 'errorInstance' to avoid variable shadowing with outer scope
+      const errorInstance = exception instanceof Error ? exception : new Error(String(exception));
+      this.logger.logError(errorInstance, logContext);
     } else if (status >= 400) {
-      // Client errors - log as warning
+      // Client errors (400-499) - log as warning (user input issues, not system failures)
       this.logger.warn(`Client error: ${message}`, logContext);
     }
 

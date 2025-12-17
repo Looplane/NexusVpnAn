@@ -1,6 +1,20 @@
-
-
-import { Injectable, Logger } from '@nestjs/common';
+/**
+ * Locations Service
+ * 
+ * Manages VPN server locations and their health status.
+ * Provides server discovery, health monitoring, and status updates.
+ * 
+ * Features:
+ * - Lists all active VPN servers with their current load and ping
+ * - Finds individual servers by ID with proper error handling
+ * - Automatic health checking every 30 seconds via cron job
+ * - Real-time server load calculation from WireGuard peer count
+ * - Automatic public key fetching for WireGuard configuration
+ * 
+ * @fix Added NotFoundException when server is not found (previously returned null/undefined)
+ * @fix Added proper return type annotation for findOne method
+ */
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Server } from './entities/server.entity';
@@ -32,8 +46,22 @@ export class LocationsService {
     }));
   }
 
-  async findOne(id: string) {
-    return this.serverRepository.findOne({ where: { id } });
+  /**
+   * Find a server by ID
+   * 
+   * @param id - Server UUID
+   * @returns Server entity
+   * @throws NotFoundException if server doesn't exist
+   * 
+   * @fix Added proper error handling - throws NotFoundException instead of returning null
+   * @fix Added return type annotation for better type safety
+   */
+  async findOne(id: string): Promise<Server> {
+    const server = await this.serverRepository.findOne({ where: { id } });
+    if (!server) {
+      throw new NotFoundException(`Server with ID ${id} not found`);
+    }
+    return server;
   }
 
   @Cron(CronExpression.EVERY_30_SECONDS)

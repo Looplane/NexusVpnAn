@@ -37,6 +37,8 @@ export const apiClient = {
       // Check if 2FA is required first, regardless of token presence
       // Backend might return an intermediate token that still requires 2FA verification
       // Use truthy check to handle boolean true, truthy strings, numbers, etc.
+      // @fix Fixed bug where requires2fa was hardcoded to false when accessToken was present
+      // @fix Changed from strict equality (=== true) to truthy check to handle various truthy values
       if (data.requires2fa) {
         return { success: false, requires2fa: Boolean(data.requires2fa) };
       }
@@ -71,9 +73,23 @@ export const apiClient = {
     }
   },
 
+  /**
+   * Verify 2FA code and complete authentication
+   * 
+   * @param email - User email address
+   * @param password - User password
+   * @param code - 6-digit 2FA code from authenticator app
+   * @returns Success status and user data
+   * @throws Error if verification fails or token is missing
+   * 
+   * @fix Changed from non-existent /auth/verify-2fa endpoint to /auth/login with code parameter
+   * @fix Added validation to ensure token exists before storing
+   * @fix Added edge case handling for requires2fa still being true after code submission
+   */
   verify2FA: async (email: string, password: string, code: string) => {
     try {
       // Backend login endpoint accepts code parameter for 2FA verification
+      // The same endpoint handles both initial login and 2FA verification
       const res = await fetch(`${API_URL}/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -83,11 +99,13 @@ export const apiClient = {
       const data = await handleResponse(res);
       
       // Check if 2FA is still required (shouldn't happen with valid code, but handle edge case)
+      // This protects against backend inconsistencies or invalid codes
       if (data.requires2fa) {
         throw new Error('2FA verification still required. Please check your code.');
       }
       
       // Ensure we have a token before storing
+      // Both accessToken and access_token formats are supported for compatibility
       if (data.accessToken || data.access_token) {
         const token = data.accessToken || data.access_token;
         await SecureStore.setItemAsync('nexus_token', token);
@@ -95,7 +113,7 @@ export const apiClient = {
         return { success: true, user: data.user };
       }
       
-      // If no token, something went wrong
+      // If no token, something went wrong with authentication
       throw new Error('Authentication failed: No access token received');
     } catch (e: any) {
       console.error('2FA Error:', e);
