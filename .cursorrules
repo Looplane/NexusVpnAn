@@ -1,0 +1,433 @@
+# Cursor IDE Rules and Commands for NexusVPN Project
+
+## 📚 Documentation Structure
+
+**All documentation must be in @--DOCUMENTATIONS--/ folder:**
+- @--DOCUMENTATIONS--/01-Planning/ - Planning and task tracking
+- @--DOCUMENTATIONS--/02-Architecture/ - Architecture documentation
+- @--DOCUMENTATIONS--/03-Logs/ - Session logs and development history
+- @--DOCUMENTATIONS--/04-Guides/ - Deployment and setup guides
+- @--DOCUMENTATIONS--/05-MCP/ - MCP server documentation
+
+**File naming convention:**
+- Format: `[Serial]-[Prefix]-[Name]_[DD-MM-YYYY]_[HHmmss].md`
+- Example: `01-BE-Production_Status_17-12-2025_021916.md`
+- Date in filename: `DD-MM-YYYY_HHmmss` (e.g., `17-12-2025_021916`)
+- Date in content: `DD-MM-YYYY | Time: HH:mm:ss` (e.g., `17-12-2025 | Time: 02:19:16`)
+
+**Document format:**
+- Document ID (e.g., BE-STATUS-001)
+- Created/Last Updated with proper date format
+- Agent declaration
+- Related documents with @filename.md (line-range) format
+
+## 🤖 Agent Configuration
+
+**Active Agent:** Backend Specialist Agent (`backend-nexusvpn-specialist`)
+
+**Project Rules Files (Add these to Cursor IDE → Settings → Rules and Commands → Project Rules):**
+
+**Core Rules (Essential - Add First):**
+1. `.cursorrules` - Main project rules (this file)
+2. `agents/AGENTS.md` - Agent roles and responsibilities
+3. `agents/AGENT_POLICY.md` - Agent autonomy and execution rules
+4. `agents/SPEC.md` - Execution spec (additive changes only)
+5. `agents/TODO.md` - Task tracking and priorities
+
+**Agent Configuration (Important - Add These):**
+6. `agents/MCP_AGENT_CONFIG.md` - MCP server configuration
+7. `agents/ROADMAP.md` - Project roadmap
+8. `agents/PHASES.md` - Development phases
+9. `agents/README.md` - Agent registry overview
+10. `agents/specialists/backend.agent.md` - Backend specialist configuration
+11. `agents/specialists/frontend.agent.md` - Frontend specialist configuration
+12. `agents/specialists/architecture.agent.md` - Architecture specialist configuration
+13. `agents/loader/agent.auto-loader.md` - Agent auto-discovery logic
+
+**Documentation Index (Reference - Add These):**
+14. `--DOCUMENTATIONS--/00-INDEX-Documentation_Structure_17-12-2025_022243.md` - Documentation index
+15. `--DOCUMENTATIONS--/01-Planning/02-PL-Task_Tracker_17-12-2025_022243.md` - Project task tracking
+16. `--DOCUMENTATIONS--/02-Architecture/01-AR-API_Schema_17-12-2025_022243.md` - API specifications
+17. `--DOCUMENTATIONS--/02-Architecture/02-AR-System_Architecture_17-12-2025_022243.md` - System architecture
+
+**Project Commands (Add these to Cursor IDE → Settings → Rules and Commands → Project Commands):**
+
+### Command 1: Backend Development
+**Name:** `Backend Development`  
+**Description:** Use backend specialist agent for API and server tasks  
+**Command Template:**
+```
+@backend-nexusvpn-specialist: [Your task]
+CONTEXT: [Background information]
+PRIORITY: [Speed/Quality/Security]
+OUTPUT: [Expected result]
+```
+
+### Command 2: Frontend Development
+**Name:** `Frontend Development`  
+**Description:** Use frontend specialist agent for UI components  
+**Command Template:**
+```
+@frontend-nexusvpn-specialist: [Your task]
+CONTEXT: [Background information]
+PRIORITY: [Speed/Quality/Security]
+OUTPUT: [Expected result]
+```
+
+### Command 3: Architecture Planning
+**Name:** `Architecture Planning`  
+**Description:** Use architecture specialist for system design  
+**Command Template:**
+```
+@architecture-nexusvpn-specialist: [Your task]
+CONTEXT: [Background information]
+PRIORITY: [Speed/Quality/Security]
+OUTPUT: [Expected result]
+```
+
+### Command 4: MCP Database Query
+**Name:** `MCP Database Query`  
+**Description:** Use MCP Supabase tools for database operations  
+**Command Template:**
+```
+Use MCP Supabase tool: query_database
+QUERY: [Your SQL query]
+CONTEXT: [What you need to know]
+```
+
+### Command 5: MCP Deployment
+**Name:** `MCP Deployment`  
+**Description:** Use MCP Render tools for deployment operations  
+**Command Template:**
+```
+Use MCP Render tool: trigger_deploy
+SERVICE: [Service name]
+CONTEXT: [Deployment requirements]
+```
+
+**Following Agents & Documentation:**
+- @agents/specialists/backend.agent.md (1-460) - Primary agent configuration
+- @agents/SPEC.md (1-38) - Execution spec (additive changes only)
+- @agents/TODO.md (1-70) - Task tracking
+- @agents/AGENT_POLICY.md (1-24) - Agent autonomy and execution rules
+- @agents/MCP_AGENT_CONFIG.md (1-110) - MCP server configuration
+- @agents/ROADMAP.md - Project roadmap
+- @agents/PHASES.md - Development phases
+- @agents/README.md - Agent registry overview
+- @agents/loader/agent.auto-loader.md - Agent auto-discovery
+- @--DOCUMENTATIONS--/00-INDEX-Documentation_Structure_17-12-2025_022243.md - Documentation index
+- @--DOCUMENTATIONS--/01-Planning/02-PL-Task_Tracker_17-12-2025_022243.md - Project task tracking
+- @--DOCUMENTATIONS--/02-Architecture/01-AR-API_Schema_17-12-2025_022243.md - API specifications
+
+## 📋 Key Documentation Files
+
+**Documentation Structure:**
+- @--DOCUMENTATIONS--/00-INDEX-Documentation_Structure_[DATE]_[TIME].md - Master index
+- @--DOCUMENTATIONS--/01-Planning/ - Planning documents (PL- prefix)
+- @--DOCUMENTATIONS--/02-Architecture/ - Architecture docs (AR- prefix)
+  - @--DOCUMENTATIONS--/02-Architecture/BACKEND/ - Backend docs (BE- prefix)
+    - 01-Status/ - Status documents
+    - 02-Fixes/ - Fix documentation
+    - 03-Agents/ - Agent declarations
+    - 04-Handover/ - Handover guides
+- @--DOCUMENTATIONS--/03-Logs/ - Session logs (LG- prefix)
+- @--DOCUMENTATIONS--/04-Guides/ - Deployment guides (GD- prefix)
+- @--DOCUMENTATIONS--/05-MCP/ - MCP integration (MCP- prefix)
+
+**File Naming Format:**
+- `[Serial]-[Prefix]-[Name]_[DD-MM-YYYY]_[HHmmss].md`
+- Example: `01-BE-Production_Status_17-12-2025_021916.md`
+
+**Prefixes:**
+- `PL-` = Planning, `AR-` = Architecture, `BE-` = Backend
+- `FE-` = Frontend, `MOB-` = Mobile, `DEP-` = Deployment
+- `GD-` = Guides, `LG-` = Logs, `MCP-` = MCP Integration
+
+**Date Format:**
+- Filename: `DD-MM-YYYY_HHmmss` (e.g., `17-12-2025_021916`)
+- Content: `DD-MM-YYYY | Time: HH:mm:ss` (e.g., `17-12-2025 | Time: 02:19:16`)
+
+## 🔧 Development Rules
+
+1. **All changes must be additive** - No breaking changes
+2. **Follow NestJS best practices** - Use decorators, DTOs, interceptors
+3. **Update documentation** - Keep all docs in @--DOCUMENTATIONS--/ folder
+4. **Use proper file references** - Format: @filename.md (line-range)
+5. **Serialize files** - Use numbered prefixes (01-, 02-, etc.)
+6. **Include timestamps** - Format: DD-MM-YYYY | Time: HH:mm:ss
+
+## 🔌 MCP Integration
+
+**Available MCP Servers:**
+- **Supabase MCP** (`mcp-servers/supabase-mcp/`) - Database operations
+  - Tools: `test_connection`, `query_database`, `get_table_info`
+  - Environment: `SUPABASE_URL`, `SUPABASE_KEY`
+- **Render MCP** (`mcp-servers/render-mcp/`) - Deployment operations
+  - Tools: `test_render_connection`, `list_services`, `get_service_info`, `get_service_logs`, `trigger_deploy`, `update_env_vars`
+  - Environment: `RENDER_API_KEY`
+- **Firecrawl MCP** (if configured) - Web scraping and content extraction
+  - Tools: `scrape_url`, `crawl_site`, `extract_content`, `search_and_scrape`, `analyze_page`, `monitor_credits`
+
+**MCP Server Configuration:**
+```json
+{
+  "mcpServers": {
+    "supabase": {
+      "command": "node",
+      "args": ["mcp-servers/supabase-mcp/dist/index.js"],
+      "env": {
+        "SUPABASE_URL": "https://xorjbccyuinebimlxblu.supabase.co",
+        "SUPABASE_KEY": "${SUPABASE_KEY}"
+      }
+    },
+    "render": {
+      "command": "node",
+      "args": ["mcp-servers/render-mcp/dist/index.js"],
+      "env": {
+        "RENDER_API_KEY": "${RENDER_API_KEY}"
+      }
+    }
+  }
+}
+```
+
+**MCP Documentation:**
+- Main Guide: @--DOCUMENTATIONS--/05-MCP/01-MCP-README_17-12-2025_022243.md
+- API Keys: @--DOCUMENTATIONS--/05-MCP/13-MCP-MCP_API_KEYS_GUIDE_17-12-2025_024425.md
+- Quick Setup: @--DOCUMENTATIONS--/05-MCP/16-MCP-MCP_QUICK_SETUP_17-12-2025_024425.md
+- Integration: @--DOCUMENTATIONS--/05-MCP/14-MCP-MCP_INTEGRATION_GUIDE_17-12-2025_024425.md
+
+## 📝 Code References
+
+**File reference format:**
+- Use @filename.md (line-range) for documentation
+- Use @path/to/file.ts (line-range) for code files
+
+**Example:**
+- @backend/src/main.ts (11-88)
+- @--DOCUMENTATIONS--/02-Architecture/BACKEND/01-Status/01-BE-Production_Status_17-12-2025_021916.md (1-125)
+
+---
+
+## 📋 Cursor IDE Setup Instructions
+
+### How to Add Project Rules
+1. Open Cursor IDE Settings (Ctrl+, or Cmd+,)
+2. Navigate to **Rules and Commands** → **Project Rules**
+3. Click **"+ Add Rule"** button
+4. Add each file from the "Project Rules Files" list above (lines 28-51)
+5. Files will be automatically included in every Agent conversation
+
+### How to Add Project Commands
+1. Open Cursor IDE Settings (Ctrl+, or Cmd+,)
+2. Navigate to **Rules and Commands** → **Project Commands**
+3. Click **"+ Add Command"** button
+4. Create commands using the templates in "Project Commands" section above (lines 53-105)
+5. Commands will be available in the command palette
+
+### Recommended Order for Project Rules
+**Add files in this order for best results:**
+1. **First:** Core Rules (`.cursorrules`, `AGENTS.md`, `AGENT_POLICY.md`, `SPEC.md`, `TODO.md`)
+2. **Second:** Agent Configs (`MCP_AGENT_CONFIG.md`, specialist agents, auto-loader)
+3. **Third:** Documentation Index (Task tracker, API schema, system architecture)
+
+---
+
+## 👤 Project User Rules
+
+### Development Workflow
+1. **Always check documentation first** - Read relevant docs in @--DOCUMENTATIONS--/ before starting
+2. **Follow agent guidelines** - Consult @agents/ for agent-specific instructions
+3. **Update documentation** - Document all changes in appropriate @--DOCUMENTATIONS--/ folders
+4. **Use MCP servers** - Leverage MCP tools for database and deployment operations when available
+5. **Test before committing** - Ensure code builds and tests pass
+
+### Code Quality Standards
+- **TypeScript Strict Mode** - All code must pass strict type checking
+- **Error Handling** - Always implement proper error handling and logging
+- **Security First** - Never commit secrets, use environment variables
+- **Backward Compatible** - All changes must be additive, no breaking changes
+- **Documentation** - Code must be self-documenting with clear comments
+
+### File Organization
+- **Code Files** - Keep in appropriate directories (frontend/, backend/, mobile/)
+- **Documentation** - All docs in @--DOCUMENTATIONS--/ with proper serialization
+- **Scripts** - Infrastructure scripts in infrastructure/ or mcp-scripts/
+- **Configuration** - Environment templates in @--DOCUMENTATIONS--/10-Configuration/
+
+---
+
+## 🤖 Agent User Commands
+
+### Quick Agent Commands
+
+**Backend Development:**
+```
+@backend-nexusvpn-specialist: [Your task]
+CONTEXT: [Background information]
+PRIORITY: [Speed/Quality/Security]
+OUTPUT: [Expected result]
+```
+
+**Frontend Development:**
+```
+@frontend-nexusvpn-specialist: [Your task]
+CONTEXT: [Background information]
+PRIORITY: [Speed/Quality/Security]
+OUTPUT: [Expected result]
+```
+
+**Architecture Planning:**
+```
+@architecture-nexusvpn-specialist: [Your task]
+CONTEXT: [Background information]
+PRIORITY: [Speed/Quality/Security]
+OUTPUT: [Expected result]
+```
+
+**Deployment:**
+```
+@Universal-Orchestrator: Deploy to [platform]
+CONTEXT: [Deployment requirements]
+PRIORITY: [Speed/Quality/Security]
+OUTPUT: [Expected result]
+```
+
+### Agent Selection Guide
+
+| Task Type | Recommended Agent | Command Format |
+|-----------|------------------|----------------|
+| API Development | `@backend-nexusvpn-specialist` | `@backend-nexusvpn-specialist: Create [endpoint]` |
+| UI Components | `@frontend-nexusvpn-specialist` | `@frontend-nexusvpn-specialist: Build [component]` |
+| System Design | `@architecture-nexusvpn-specialist` | `@architecture-nexusvpn-specialist: Design [system]` |
+| Database Operations | Use MCP Supabase tools | `query_database`, `get_table_info` |
+| Deployment | Use MCP Render tools | `trigger_deploy`, `update_env_vars` |
+| Complex Tasks | `@Universal-Orchestrator` | `@Universal-Orchestrator: [Complex task]` |
+
+### Agent Handover Protocol
+
+When switching between agents:
+1. **Read handover docs** - Check @--DOCUMENTATIONS--/02-Architecture/BACKEND/04-Handover/
+2. **Update status** - Update relevant status documents
+3. **Document changes** - Log all changes in @--DOCUMENTATIONS--/03-Logs/
+4. **Update task tracker** - Mark tasks complete in @--DOCUMENTATIONS--/01-Planning/02-PL-Task_Tracker_17-12-2025_022243.md
+
+---
+
+## 🎯 Project-Specific Rules
+
+### Monorepo Structure
+- **frontend/** - React + Vite application
+- **backend/** - NestJS API server
+- **mobile/** - React Native + Expo app
+- **infrastructure/** - Deployment scripts and configs
+- **mcp-servers/** - MCP server implementations
+- **agents/** - AI agent configurations
+- **--DOCUMENTATIONS--/** - All project documentation
+
+### Environment Management
+- **Local Development** - Use `.env` files (not committed)
+- **Production** - Use platform environment variables (Render, Vercel, Supabase)
+- **MCP Servers** - Use `.env.mcp` for MCP server configuration
+- **Templates** - Reference @--DOCUMENTATIONS--/10-Configuration/ for env templates
+
+### Deployment Strategy
+- **Database** - Supabase (PostgreSQL) for cloud, local PostgreSQL for dev
+- **Backend** - Render (auto-detects render.yaml)
+- **Frontend** - Vercel (uses vercel.json)
+- **Mobile** - Expo EAS Build for APK/IPA generation
+
+### Testing Requirements
+- **Backend** - All API endpoints must be tested
+- **Frontend** - UI components should be tested
+- **Integration** - End-to-end flows must be verified
+- **Documentation** - All features must be documented
+
+---
+
+## 📚 Documentation Commands
+
+### Create New Documentation
+```
+Format: [Serial]-[Prefix]-[Name]_[DD-MM-YYYY]_[HHmmss].md
+Example: 01-BE-Production_Status_17-12-2025_021916.md
+Location: @--DOCUMENTATIONS--/[Category]/
+```
+
+### Update Existing Documentation
+- Always include "Last Updated" timestamp
+- Add related document references
+- Declare active agent
+- Update status if applicable
+
+### Reference Documentation
+- Use format: `@filename.md (line-range)`
+- Always include line numbers for precision
+- Cross-reference related documents
+
+---
+
+## 🔐 Security Rules
+
+1. **Never commit secrets** - Use environment variables
+2. **Validate all inputs** - Use DTOs and validation decorators
+3. **Sanitize user data** - Prevent XSS and injection attacks
+4. **Use HTTPS** - Always in production
+5. **Rate limiting** - Implement for API endpoints
+6. **CORS configuration** - Restrict to known origins
+7. **JWT security** - Use strong secrets, proper expiration
+
+---
+
+## 🚀 Performance Rules
+
+1. **Database queries** - Use indexes, avoid N+1 queries
+2. **API responses** - Implement pagination for large datasets
+3. **Caching** - Use Redis or in-memory cache where appropriate
+4. **Code splitting** - Lazy load components in frontend
+5. **Asset optimization** - Compress images, minify code
+
+---
+
+## 🐛 Error Handling Rules
+
+1. **Global exception filter** - Catch all unhandled errors
+2. **Logging** - Log all errors with context
+3. **User-friendly messages** - Don't expose technical details to users
+4. **Error recovery** - Implement retry logic where appropriate
+5. **Monitoring** - Track errors in production
+
+---
+
+## 📝 Code Style Rules
+
+1. **TypeScript** - Use strict mode, avoid `any`
+2. **Naming** - Use descriptive names, follow conventions
+3. **Comments** - Document complex logic, not obvious code
+4. **Formatting** - Use Prettier/ESLint configuration
+5. **Imports** - Organize imports (external, internal, relative)
+
+---
+
+## 🔄 Git Workflow Rules
+
+1. **Branch naming** - Use descriptive branch names
+2. **Commit messages** - Clear, descriptive commit messages
+3. **Pull requests** - Include description and testing notes
+4. **Code review** - Review before merging
+5. **Documentation** - Update docs with code changes
+
+---
+
+## 🎓 Learning Resources
+
+- **NestJS Docs**: https://docs.nestjs.com
+- **React Docs**: https://react.dev
+- **Expo Docs**: https://docs.expo.dev
+- **WireGuard Docs**: https://www.wireguard.com
+- **MCP Protocol**: @agents/_standards/anthropic-mcp.md
+
+---
+
+**Last Updated:** 17-12-2025 | Time: 04:11:12
+
