@@ -1,8 +1,8 @@
 {
-    "name": "nexusvpn-root",
-    "private": true,
-    "scripts": {
-        "start": "powershell ./start-all.ps1",
-        "install:all": "npm install --prefix frontend && npm install --prefix backend && npm install --prefix mobile"
-    }
+  "name": "nexusvpn-root",
+  "private": true,
+  "scripts": {
+    "start": "sh ./start-all.sh",
+    "install:all": "npm install --prefix frontend && npm install --prefix backend && npm install --prefix mobile"
+  }
 }
