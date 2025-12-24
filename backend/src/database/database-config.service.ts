@@ -64,7 +64,11 @@ export class DatabaseConfigService implements TypeOrmOptionsFactory {
       },
       
       // SSL configuration for production
-      ssl: isProduction ? { rejectUnauthorized: false } : false,
+      const sslEnabled = process.env.DATABASE_SSL === 'true';
+
+...
+
+ssl: sslEnabled ? { rejectUnauthorized: false } : false,
     };
 
     // Handle DATABASE_URL (PaaS environments like Render)
