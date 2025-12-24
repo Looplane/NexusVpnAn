@@ -1,16 +1,17 @@
 #!/usr/bin/env sh
 set -e
 
-echo "🚀 Starting NexusVPN services..."
+echo "🚀 Starting NexusVPN (Linux mode)"
 
 # Backend
 cd backend
-npm run start &
+npm run start:prod &
 cd ..
 
-# Frontend
+# Frontend (Vite preview or custom prod server)
 cd frontend
-npm run start &
+npm run build
+npm run preview -- --host 0.0.0.0 &
 cd ..
 
 wait
