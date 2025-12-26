@@ -47,7 +47,7 @@ async function fetchWithFallback<T>(endpoint: string, options: RequestInit, mock
 
 export const apiClient = {
   // ... Existing methods ...
-  login: async (email: string, password: string, code?: string) => fetchWithFallback('/auth/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, password, code }) }, () => mockApi.login(email, password, code)),
+  login: async (email: string, password: string, code?: string) => { const res = await fetchWithFallback('/auth/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, password, code }) }, () => mockApi.login(email, password, code)); if (res?.access_token) { localStorage.setItem('nexus_vpn_token', res.access_token); localStorage.setItem('nexus_vpn_user', JSON.stringify(res.user)); } return res; },
   register: async (email: string, password: string) => fetchWithFallback('/users/register', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, password, fullName: email.split('@')[0] }) }, () => mockApi.register(email, password)),
   getProfile: async () => fetchWithFallback<User>('/users/me', { method: 'GET', headers: getHeaders() }, async () => { /* No mock fallback for auth check to force logout if fail, handled by 401 */ throw new Error('Auth Check Failed'); }),
 
