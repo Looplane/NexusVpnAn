@@ -2,7 +2,7 @@ import { Controller, Get, Patch, Param, UseGuards, Request, Version } from '@nes
 import { NotificationsService } from './notifications.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
-@Controller({ path: 'notifications', version: '1' })
+@Controller('notifications')
 @UseGuards(JwtAuthGuard)
 export class NotificationsController {
   constructor(private readonly notificationsService: NotificationsService) {}

@@ -22,7 +22,7 @@ import { UpdateUserDto } from './dto/update-user.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { Cache } from '../cache/decorators/cache.decorator';
 
-@Controller({ path: 'users', version: '1' })
+@Controller('users')
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 

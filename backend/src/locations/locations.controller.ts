@@ -3,7 +3,7 @@ import { LocationsService } from './locations.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { Cache } from '../cache/decorators/cache.decorator';
 
-@Controller({ path: 'locations', version: '1' })
+@Controller('locations')
 export class LocationsController {
   constructor(private readonly locationsService: LocationsService) {}
 

@@ -7,7 +7,7 @@ import { UserRole } from '../users/entities/user.entity';
 import { CreateTicketDto } from './dto/create-ticket.dto';
 import { ReplyTicketDto } from './dto/reply-ticket.dto';
 
-@Controller({ path: 'support', version: '1' })
+@Controller( 'support')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class SupportController {
   constructor(private readonly supportService: SupportService) {}

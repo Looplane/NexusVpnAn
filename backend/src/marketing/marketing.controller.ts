@@ -6,7 +6,7 @@ import { Roles } from '../auth/roles.decorator';
 import { UserRole } from '../users/entities/user.entity';
 import { Cache } from '../cache/decorators/cache.decorator';
 
-@Controller({ path: 'admin/coupons', version: '1' })
+@Controller('admin/coupons')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class MarketingController {
   constructor(private readonly marketingService: MarketingService) {}

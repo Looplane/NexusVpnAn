@@ -6,7 +6,7 @@ import { UserRole } from '../users/entities/user.entity';
 import { ServerDetectionService } from './server-detection.service';
 import { AutoConfigService } from './auto-config.service';
 
-@Controller({ path: 'admin/server-config', version: '1' })
+@Controller('admin/server-config')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class ServerConfigController {
   constructor(

@@ -3,7 +3,7 @@ import { VpnService } from './vpn.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { GenerateConfigDto } from './dto/generate-config.dto';
 
-@Controller({ path: 'vpn', version: '1' })
+@Controller('vpn')
 export class VpnController {
   constructor(private readonly vpnService: VpnService) {}
 
