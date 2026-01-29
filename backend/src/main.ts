@@ -86,8 +86,6 @@ async function bootstrap() {
     .setDescription('The NexusVPN SaaS API description')
     .setVersion('1.0')
     .addBearerAuth()
-    .addServer('/api/v1', 'API Version 1')
-    .addServer('/api', 'Default (Version 1)')
     .build();
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api/docs', app, document);
